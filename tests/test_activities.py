@@ -8,6 +8,12 @@ from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
 
 from youdotcom_temporal import activities
+from youdotcom_temporal.activities import (
+    you_activities,
+    youdotcom_contents,
+    youdotcom_research,
+    youdotcom_search,
+)
 from youdotcom_temporal.models import ContentsInput, ResearchInput, SearchInput
 
 
@@ -61,63 +67,56 @@ def _mock_you_client(*_args: Any, **_kwargs: Any):
     return mock_cm
 
 
-@pytest.mark.asyncio
 async def test_search_activity_success(env: ActivityEnvironment):
     with patch("youdotcom_temporal.activities.you_client", side_effect=_mock_you_client):
-        result = await env.run(youdotcom_search_local(), SearchInput(query="python", count=5))
+        result = await env.run(youdotcom_search, SearchInput(query="python", count=5))
     assert isinstance(result, dict)
     assert "results" in result
 
 
-@pytest.mark.asyncio
 async def test_search_activity_empty_query(env: ActivityEnvironment):
     with pytest.raises(ApplicationError) as exc_info:
-        await env.run(youdotcom_search_local(), SearchInput(query=""))
+        await env.run(youdotcom_search, SearchInput(query=""))
     assert exc_info.value.type == "YouValidationError"
     assert exc_info.value.non_retryable is True
 
 
-@pytest.mark.asyncio
 async def test_search_activity_whitespace_query(env: ActivityEnvironment):
     with pytest.raises(ApplicationError) as exc_info:
-        await env.run(youdotcom_search_local(), SearchInput(query="   "))
+        await env.run(youdotcom_search, SearchInput(query="   "))
     assert exc_info.value.type == "YouValidationError"
 
 
-@pytest.mark.asyncio
 async def test_missing_api_key(env: ActivityEnvironment, monkeypatch):
     monkeypatch.delenv("YDC_API_KEY", raising=False)
     activities.set_config(None)
     with pytest.raises(ApplicationError) as exc_info:
-        await env.run(youdotcom_search_local(), SearchInput(query="test"))
+        await env.run(youdotcom_search, SearchInput(query="test"))
     assert exc_info.value.type == "YouAuthError"
     assert exc_info.value.non_retryable is True
 
 
-@pytest.mark.asyncio
 async def test_research_activity_success(env: ActivityEnvironment):
     with patch("youdotcom_temporal.activities.you_client", side_effect=_mock_you_client):
-        result = await env.run(youdotcom_research_local(), ResearchInput(input="what is python"))
+        result = await env.run(youdotcom_research, ResearchInput(input="what is python"))
     assert isinstance(result, dict)
     assert "answer" in result
 
 
-@pytest.mark.asyncio
 async def test_research_activity_invalid_effort(env: ActivityEnvironment):
     with pytest.raises(ApplicationError) as exc_info:
         await env.run(
-            youdotcom_research_local(),
+            youdotcom_research,
             ResearchInput(input="test", research_effort="invalid"),
         )
     assert exc_info.value.type == "YouValidationError"
     assert exc_info.value.non_retryable is True
 
 
-@pytest.mark.asyncio
 async def test_contents_activity_success(env: ActivityEnvironment):
     with patch("youdotcom_temporal.activities.you_client", side_effect=_mock_you_client):
         result = await env.run(
-            youdotcom_contents_local(),
+            youdotcom_contents,
             ContentsInput(urls=["https://example.com"]),
         )
     assert isinstance(result, dict)
@@ -125,49 +124,16 @@ async def test_contents_activity_success(env: ActivityEnvironment):
     assert len(result["results"]) == 1
 
 
-@pytest.mark.asyncio
 async def test_contents_activity_invalid_format(env: ActivityEnvironment):
     with pytest.raises(ApplicationError) as exc_info:
         await env.run(
-            youdotcom_contents_local(),
+            youdotcom_contents,
             ContentsInput(urls=["https://example.com"], formats=["xml"]),
         )
     assert exc_info.value.type == "YouValidationError"
     assert exc_info.value.non_retryable is True
 
 
-@pytest.mark.asyncio
-async def test_contents_activity_default_markdown(env: ActivityEnvironment):
-    with patch("youdotcom_temporal.activities.you_client", side_effect=_mock_you_client):
-        await env.run(
-            youdotcom_contents_local(),
-            ContentsInput(urls=["https://example.com"]),
-        )
-        # formats defaults to ["markdown"] when None; activity converts to
-        # ContentsFormats.MARKDOWN before the network call.
-
-
 def test_you_activities_returns_three():
     acts = you_activities()
     assert len(acts) == 3
-
-
-# Direct references to the decorated activity functions for ActivityEnvironment.run
-def youdotcom_search_local():
-    from youdotcom_temporal.activities import youdotcom_search
-    return youdotcom_search
-
-
-def youdotcom_research_local():
-    from youdotcom_temporal.activities import youdotcom_research
-    return youdotcom_research
-
-
-def youdotcom_contents_local():
-    from youdotcom_temporal.activities import youdotcom_contents
-    return youdotcom_contents
-
-
-def you_activities():
-    from youdotcom_temporal.activities import you_activities as _ya
-    return _ya()
