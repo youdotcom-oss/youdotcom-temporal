@@ -25,6 +25,20 @@ def test_explicit_override_wins_over_env(monkeypatch):
     assert cfg.api_key == "explicit-key"
 
 
+def test_global_override_wins_over_env(monkeypatch):
+    monkeypatch.setenv("YDC_API_KEY", "env-key")
+    import youdotcom_temporal.activities as activities
+
+    try:
+        activities.set_config(YouConfig(api_key="global-key"))
+        # Production read path is _cfg() -> YouConfig.resolve(_config).
+        cfg = YouConfig.resolve(activities._config)
+        assert cfg.api_key == "global-key"
+    finally:
+        activities.set_config(None)
+        assert activities._config is None
+
+
 def test_defaults():
     cfg = YouConfig()
     assert cfg.timeout_seconds == 30.0

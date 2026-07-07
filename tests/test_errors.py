@@ -79,3 +79,19 @@ def test_unknown_error_passthrough():
     err = RuntimeError("something went wrong")
     result = to_temporal_error(err)
     assert result is err
+
+
+@pytest.mark.parametrize(
+    "error_cls",
+    [
+        yerr.SearchInternalServerError,
+        yerr.ResearchInternalServerError,
+        yerr.ContentsInternalServerError,
+    ],
+)
+def test_typed_internal_server_errors_passthrough(error_cls):
+    # Typed 500 subclasses extend YouError directly, not YouDefaultError,
+    # so they fall through to the final return-exc branch (retryable).
+    err = _make_error(error_cls, 500)
+    result = to_temporal_error(err)
+    assert result is err
