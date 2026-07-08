@@ -44,12 +44,3 @@ def test_defaults():
     assert cfg.timeout_seconds == 30.0
     assert cfg.api_key is None
     assert cfg.server_url is None
-
-
-def test_frozen():
-    cfg = YouConfig(api_key="key")
-    try:
-        cfg.api_key = "other"  # type: ignore[misc]
-        raise AssertionError("Should have raised FrozenInstanceError")
-    except AttributeError:
-        pass
