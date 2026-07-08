@@ -65,6 +65,6 @@ jobs:
           echo "$HOME/.temporalio/bin" >> "$GITHUB_PATH"
 
       - name: Run integration tests
-        run: uv run pytest tests/ -v -k "integration"
+        run: uv run pytest -v -m integration
         env:
           YDC_API_KEY: ${{ secrets.YDC_API_KEY }}

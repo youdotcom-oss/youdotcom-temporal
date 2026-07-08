@@ -45,6 +45,10 @@ packages = ["src/youdotcom_temporal"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "-m 'not integration'"
+markers = [
+    "integration: end-to-end tests hitting a real You.com API and a local Temporal server (require YDC_API_KEY); run with -m integration",
+]
 
 [tool.ruff]
 line-length = 100

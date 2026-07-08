@@ -8,6 +8,7 @@ import pytest
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
 from youdotcom import errors as yerr
+from youdotcom import models
 
 from youdotcom_temporal import activities
 from youdotcom_temporal.activities import (
@@ -67,6 +68,22 @@ def _mock_you_client(*_args: Any, **_kwargs: Any):
     mock_cm.__aenter__ = AsyncMock(return_value=mock_you)
     mock_cm.__aexit__ = AsyncMock(return_value=None)
     return mock_cm
+
+
+def _capturing_you_client() -> tuple[MagicMock, Any]:
+    """Return (mock_you, factory). Inspect mock_you.<method>.call_args after running."""
+    mock_you = MagicMock()
+    mock_you.search.unified_async = AsyncMock(return_value=_MockSearchResponse())
+    mock_you.research_async = AsyncMock(return_value=_MockResearchResponse())
+    mock_you.contents.generate_async = AsyncMock(return_value=[_MockContentsResponse()])
+
+    def _factory(*_args: Any, **_kwargs: Any):
+        mock_cm = AsyncMock()
+        mock_cm.__aenter__ = AsyncMock(return_value=mock_you)
+        mock_cm.__aexit__ = AsyncMock(return_value=None)
+        return mock_cm
+
+    return mock_you, _factory
 
 
 def _mock_you_client_raising(exc: Exception):
@@ -220,6 +237,63 @@ async def test_contents_activity_invalid_format(env: ActivityEnvironment):
         )
     assert exc_info.value.type == "YouValidationError"
     assert exc_info.value.non_retryable is True
+
+
+async def test_search_passes_every_param_to_sdk(env: ActivityEnvironment):
+    mock_you, factory = _capturing_you_client()
+    inp = SearchInput(
+        query="python",
+        count=5,
+        freshness="pw",
+        country="US",
+        language="en",
+        safesearch="strict",
+        livecrawl="always",
+        livecrawl_formats=["markdown"],
+    )
+    with patch("youdotcom_temporal.activities.you_client", side_effect=factory):
+        await env.run(youdotcom_search, inp)
+    assert mock_you.search.unified_async.call_args.kwargs == {
+        "query": "python",
+        "count": 5,
+        "freshness": "pw",
+        "country": "US",
+        "language": "en",
+        "safesearch": "strict",
+        "livecrawl": "always",
+        "livecrawl_formats": ["markdown"],
+    }
+
+
+async def test_research_passes_effort_enum_to_sdk(env: ActivityEnvironment):
+    mock_you, factory = _capturing_you_client()
+    with patch("youdotcom_temporal.activities.you_client", side_effect=factory):
+        await env.run(youdotcom_research, ResearchInput(input="q", research_effort="deep"))
+    assert mock_you.research_async.call_args.kwargs == {
+        "input": "q",
+        "research_effort": models.ResearchEffort.DEEP,
+    }
+
+
+async def test_contents_passes_formats_and_timeout_to_sdk(env: ActivityEnvironment):
+    mock_you, factory = _capturing_you_client()
+    inp = ContentsInput(urls=["https://a"], formats=["html", "markdown"], crawl_timeout=25)
+    with patch("youdotcom_temporal.activities.you_client", side_effect=factory):
+        await env.run(youdotcom_contents, inp)
+    assert mock_you.contents.generate_async.call_args.kwargs == {
+        "urls": ["https://a"],
+        "formats": [models.ContentsFormats.HTML, models.ContentsFormats.MARKDOWN],
+        "crawl_timeout": 25,
+    }
+
+
+async def test_contents_defaults_to_markdown_format(env: ActivityEnvironment):
+    mock_you, factory = _capturing_you_client()
+    with patch("youdotcom_temporal.activities.you_client", side_effect=factory):
+        await env.run(youdotcom_contents, ContentsInput(urls=["https://a"]))
+    assert mock_you.contents.generate_async.call_args.kwargs["formats"] == [
+        models.ContentsFormats.MARKDOWN
+    ]
 
 
 def test_you_activities_returns_three():
