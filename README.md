@@ -121,7 +121,8 @@ python examples/run_workflow.py
 uv sync --all-extras
 uv run ruff check
 uv run mypy src
-uv run pytest
+uv run pytest                          # unit tests (no network)
+uv run pytest -m integration           # integration tests (needs YDC_API_KEY + local Temporal server)
 ```
 
 ## License
