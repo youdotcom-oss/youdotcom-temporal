@@ -14,7 +14,7 @@ Requires Python 3.10+. Uses the official [`youdotcom`](https://pypi.org/project/
 
 ## Quickstart
 
-Set your You.com API key (get one at [you.com/platform/api-keys](https://you.com/platform/api-keys)):
+Set your You.com API key (get one at [you.com/platform](https://you.com/platform)):
 
 ```bash
 export YDC_API_KEY=your-key-here
