@@ -3,7 +3,7 @@ from __future__ import annotations
 from temporalio.exceptions import ApplicationError
 from youdotcom import errors as yerr
 
-QUOTA_CTA = "You.com quota exhausted. See https://you.com/platform/api-keys for plan limits."
+QUOTA_CTA = "You.com quota exhausted. See https://you.com/platform for plan limits."
 
 
 def to_temporal_error(exc: Exception) -> Exception:
