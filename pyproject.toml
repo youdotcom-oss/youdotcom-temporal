@@ -27,7 +27,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://you.com"
-Documentation = "https://docs.you.com"
+Documentation = "https://you.com/docs"
 Repository = "https://github.com/youdotcom-oss/youdotcom-temporal"
 Issues = "https://github.com/youdotcom-oss/youdotcom-temporal/issues"
 Changelog = "https://github.com/youdotcom-oss/youdotcom-temporal/releases"
