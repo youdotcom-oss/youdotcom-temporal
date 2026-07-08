@@ -3,9 +3,11 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
+from youdotcom import errors as yerr
 
 from youdotcom_temporal import activities
 from youdotcom_temporal.activities import (
@@ -67,6 +69,30 @@ def _mock_you_client(*_args: Any, **_kwargs: Any):
     return mock_cm
 
 
+def _mock_you_client_raising(exc: Exception):
+    """Factory: returns a callable that mocks you_client and raises exc from the SDK call."""
+
+    def _factory(*_args: Any, **_kwargs: Any):
+        mock_you = MagicMock()
+        mock_you.search.unified_async = AsyncMock(side_effect=exc)
+        mock_you.research_async = AsyncMock(side_effect=exc)
+        mock_you.contents.generate_async = AsyncMock(side_effect=exc)
+        mock_cm = AsyncMock()
+        mock_cm.__aenter__ = AsyncMock(return_value=mock_you)
+        mock_cm.__aexit__ = AsyncMock(return_value=None)
+        return mock_cm
+
+    return _factory
+
+
+def _make_sdk_error(cls: type[yerr.YouError], status: int) -> yerr.YouError:
+    raw = httpx.Response(
+        status_code=status,
+        request=httpx.Request("GET", "https://api.you.com/v1/test"),
+    )
+    return cls(data=None, raw_response=raw, body=f"HTTP {status}")  # type: ignore[arg-type]
+
+
 async def test_search_activity_success(env: ActivityEnvironment):
     with patch("youdotcom_temporal.activities.you_client", side_effect=_mock_you_client):
         result = await env.run(youdotcom_search, SearchInput(query="python", count=5))
@@ -92,6 +118,68 @@ async def test_missing_api_key(env: ActivityEnvironment, monkeypatch):
     activities.set_config(None)
     with pytest.raises(ApplicationError) as exc_info:
         await env.run(youdotcom_search, SearchInput(query="test"))
+    assert exc_info.value.type == "YouAuthError"
+    assert exc_info.value.non_retryable is True
+
+
+async def test_search_activity_maps_sdk_auth_error(env: ActivityEnvironment):
+    """SDK auth error raised inside the activity must be mapped to YouAuthError."""
+    sdk_err = _make_sdk_error(yerr.SearchUnauthorizedError, 401)
+    with patch(
+        "youdotcom_temporal.activities.you_client",
+        side_effect=_mock_you_client_raising(sdk_err),
+    ):
+        with pytest.raises(ApplicationError) as exc_info:
+            await env.run(youdotcom_search, SearchInput(query="test"))
+    assert exc_info.value.type == "YouAuthError"
+    assert exc_info.value.non_retryable is True
+
+
+async def test_search_activity_maps_sdk_quota_error(env: ActivityEnvironment):
+    """SDK 402 error raised inside the activity must be mapped to YouQuotaExhausted."""
+    sdk_err = yerr.YouDefaultError(
+        "Payment Required",
+        raw_response=httpx.Response(
+            status_code=402,
+            request=httpx.Request("GET", "https://api.you.com/v1/test"),
+        ),
+        body="Payment Required",
+    )
+    with patch(
+        "youdotcom_temporal.activities.you_client",
+        side_effect=_mock_you_client_raising(sdk_err),
+    ):
+        with pytest.raises(ApplicationError) as exc_info:
+            await env.run(youdotcom_search, SearchInput(query="test"))
+    assert exc_info.value.type == "YouQuotaExhausted"
+    assert exc_info.value.non_retryable is True
+
+
+async def test_research_activity_maps_sdk_auth_error(env: ActivityEnvironment):
+    """SDK auth error in research activity must be mapped to YouAuthError."""
+    sdk_err = _make_sdk_error(yerr.ResearchUnauthorizedError, 401)
+    with patch(
+        "youdotcom_temporal.activities.you_client",
+        side_effect=_mock_you_client_raising(sdk_err),
+    ):
+        with pytest.raises(ApplicationError) as exc_info:
+            await env.run(youdotcom_research, ResearchInput(input="test"))
+    assert exc_info.value.type == "YouAuthError"
+    assert exc_info.value.non_retryable is True
+
+
+async def test_contents_activity_maps_sdk_auth_error(env: ActivityEnvironment):
+    """SDK auth error in contents activity must be mapped to YouAuthError."""
+    sdk_err = _make_sdk_error(yerr.ContentsUnauthorizedError, 401)
+    with patch(
+        "youdotcom_temporal.activities.you_client",
+        side_effect=_mock_you_client_raising(sdk_err),
+    ):
+        with pytest.raises(ApplicationError) as exc_info:
+            await env.run(
+                youdotcom_contents,
+                ContentsInput(urls=["https://example.com"]),
+            )
     assert exc_info.value.type == "YouAuthError"
     assert exc_info.value.non_retryable is True
 
