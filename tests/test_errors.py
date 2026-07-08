@@ -45,6 +45,18 @@ def test_unprocessable_entity_non_retryable():
     assert result.non_retryable is True
 
 
+def test_422_via_default_error_non_retryable():
+    """422 from YouDefaultError (e.g. search/contents) must also map to YouValidationError."""
+    raw = _mock_response(422)
+    err = yerr.YouDefaultError(
+        "Unprocessable Entity", raw_response=raw, body="Unprocessable Entity"
+    )
+    result = to_temporal_error(err)
+    assert isinstance(result, ApplicationError)
+    assert result.type == "YouValidationError"
+    assert result.non_retryable is True
+
+
 def test_quota_exhausted_non_retryable():
     raw = _mock_response(402)
     err = yerr.YouDefaultError(

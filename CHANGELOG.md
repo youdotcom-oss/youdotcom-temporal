@@ -27,4 +27,4 @@
   (auth errors non-retryable, 422 non-retryable, 402 non-retryable,
   429 and 5xx passthrough for retry).
 - Sandboxed workflow runner with passthrough modules for SDK dependencies.
-- 42 unit tests covering config, models, error mapping, activities, and plugin.
+- 42 unit tests covering config, error mapping, activities, and plugin.

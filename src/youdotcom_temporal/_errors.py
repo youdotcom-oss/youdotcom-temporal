@@ -29,5 +29,9 @@ def to_temporal_error(exc: Exception) -> Exception:
             return exc
         if status == 402:
             return ApplicationError(QUOTA_CTA, type="YouQuotaExhausted", non_retryable=True)
+        if status == 422:
+            return ApplicationError(
+                "You.com rejected the request", type="YouValidationError", non_retryable=True
+            )
         return exc
     return exc

@@ -10,7 +10,7 @@ from youdotcom_temporal import YouPlugin
 
 
 async def main() -> None:
-    client = await Client.connect("localhost:7233", plugins=[YouPlugin()])
+    client = await Client.connect("localhost:7233")
     worker = Worker(
         client,
         task_queue="you-search",

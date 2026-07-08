@@ -44,6 +44,6 @@ Use [conventional commits](https://www.conventionalcommits.org/):
 
 ## Testing
 
-Tests use mocked You.com clients (no network calls). Integration tests that hit the real API are gated behind `YDC_API_KEY` being set and are skipped in CI by default.
+Tests use mocked You.com clients (no network calls). Integration tests that hit the real API are gated behind `YDC_API_KEY` and are not run in CI. Run them locally with `uv run pytest -m integration`.
 
 Activity tests use `temporalio.testing.ActivityEnvironment` to run activities in isolation. See existing tests for patterns.
