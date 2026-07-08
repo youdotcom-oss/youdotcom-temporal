@@ -42,6 +42,10 @@ jobs:
       - name: Test
         run: uv run pytest
 
+  # Opt-in only. Manual trigger (workflow_dispatch) restricted to write-access
+  # users. If the YDC_API_KEY secret is not configured, the integration tests
+  # self-skip and this job passes. Do not add a shared or production key to a
+  # public repo; use a dedicated, low-quota, revocable key if you enable this.
   integration:
     if: github.event_name == 'workflow_dispatch' && inputs.run_integration
     runs-on: ubuntu-latest
