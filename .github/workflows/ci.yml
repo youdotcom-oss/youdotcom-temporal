@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_integration:
+        description: "Run integration tests (requires YDC_API_KEY secret)"
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -17,7 +23,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
 
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
@@ -33,3 +41,30 @@ jobs:
 
       - name: Test
         run: uv run pytest
+
+  integration:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Install Temporal CLI
+        run: |
+          curl -sSf https://temporal.download/cli | sh
+          echo "$HOME/.temporalio/bin" >> "$GITHUB_PATH"
+
+      - name: Run integration tests
+        run: uv run pytest tests/ -v -k "integration"
+        env:
+          YDC_API_KEY: ${{ secrets.YDC_API_KEY }}

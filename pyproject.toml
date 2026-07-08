@@ -6,12 +6,31 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Tyler Eastman" }]
+keywords = ["temporal", "youcom", "you.com", "search", "workflow", "durable-execution"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     # Floor, not a pin: SimplePlugin needs 1.19.0+; use a recent stable floor and
     # let CI test the latest. Upper bound only guards the next major.
     "temporalio>=1.27.0,<2",
     "youdotcom>=2.3.0,<3",
 ]
+
+[project.urls]
+Homepage = "https://you.com"
+Documentation = "https://docs.you.com"
+Repository = "https://github.com/youdotcom-oss/youdotcom-temporal"
+Issues = "https://github.com/youdotcom-oss/youdotcom-temporal/issues"
+Changelog = "https://github.com/youdotcom-oss/youdotcom-temporal/releases"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "mypy", "ruff"]
