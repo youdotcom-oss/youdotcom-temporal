@@ -1,3 +1,12 @@
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
+
+__version__: str
+try:
+    __version__ = _pkg_version("youdotcom-temporal")
+except PackageNotFoundError:
+    __version__ = "0.0.0-dev"
+
 from .activities import (
     set_config,
     you_activities,
@@ -20,4 +29,5 @@ __all__ = [
     "SearchInput",
     "ResearchInput",
     "ContentsInput",
+    "__version__",
 ]

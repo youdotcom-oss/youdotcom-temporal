@@ -1,18 +1,9 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
-import httpx
-from youdotcom._hooks.registration import YDCUserAgentOverrideHook
-from youdotcom._hooks.types import BeforeRequestContext
-from youdotcom.sdkconfiguration import SDKConfiguration
-
-from youdotcom_temporal._client import (
-    _USER_AGENT,
-    _patch_user_agent,
-    _TemporalUserAgentHook,
-    you_client,
-)
+from youdotcom_temporal import __version__
+from youdotcom_temporal._client import _USER_AGENT, you_client
 from youdotcom_temporal.config import YouConfig
 
 
@@ -48,47 +39,14 @@ async def test_client_includes_server_url_when_set():
     }
 
 
-def test_user_agent_constant():
-    assert _USER_AGENT == "youdotcom-temporal/0.1.0"
+async def test_client_sets_custom_user_agent():
+    cfg = YouConfig(api_key="k", timeout_seconds=30.0)
+    fake = _fake_you()
+    with patch("youdotcom_temporal._client.You", return_value=fake):
+        async with you_client(cfg):
+            pass
+    assert fake.sdk_configuration.user_agent == _USER_AGENT
 
 
-def test_temporal_user_agent_hook_sets_header():
-    hook = _TemporalUserAgentHook()
-    request = httpx.Request("GET", "https://api.you.com/test")
-    cfg = SDKConfiguration(
-        client=None,
-        client_supplied=False,
-        async_client=None,
-        async_client_supplied=False,
-        debug_logger=MagicMock(),
-    )
-    ctx = BeforeRequestContext.__new__(BeforeRequestContext)
-    ctx.config = cfg
-    result = hook.before_request(ctx, request)
-    assert result.headers["User-Agent"] == _USER_AGENT
-
-
-def test_patch_user_agent_replaces_default_hook():
-    sdk_config = SDKConfiguration(
-        client=None,
-        client_supplied=False,
-        async_client=None,
-        async_client_supplied=False,
-        debug_logger=MagicMock(),
-    )
-    # Simulate what the SDK constructor does
-    from youdotcom._hooks.sdkhooks import SDKHooks
-
-    hooks = SDKHooks()
-    sdk_config.__dict__["_hooks"] = hooks
-
-    client = MagicMock()
-    client.sdk_configuration = sdk_config
-
-    _patch_user_agent(client)
-
-    assert len(hooks.before_request_hooks) == 1
-    assert isinstance(hooks.before_request_hooks[0], _TemporalUserAgentHook)
-    assert not isinstance(
-        hooks.before_request_hooks[0], YDCUserAgentOverrideHook
-    )
+def test_user_agent_includes_package_version():
+    assert _USER_AGENT == f"youdotcom-temporal/{__version__}"
