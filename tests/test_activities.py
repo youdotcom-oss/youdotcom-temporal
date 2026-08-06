@@ -56,13 +56,13 @@ def _mock_you_client(*_args: Any, **_kwargs: Any):
     mock_you = MagicMock()
 
     search_result = _MockSearchResponse()
-    mock_you.search.unified_async = AsyncMock(return_value=search_result)
+    mock_you.search_async = AsyncMock(return_value=search_result)
 
     research_result = _MockResearchResponse()
     mock_you.research_async = AsyncMock(return_value=research_result)
 
     contents_result = [_MockContentsResponse()]
-    mock_you.contents.generate_async = AsyncMock(return_value=contents_result)
+    mock_you.contents_async = AsyncMock(return_value=contents_result)
 
     mock_cm = AsyncMock()
     mock_cm.__aenter__ = AsyncMock(return_value=mock_you)
@@ -73,9 +73,9 @@ def _mock_you_client(*_args: Any, **_kwargs: Any):
 def _capturing_you_client() -> tuple[MagicMock, Any]:
     """Return (mock_you, factory). Inspect mock_you.<method>.call_args after running."""
     mock_you = MagicMock()
-    mock_you.search.unified_async = AsyncMock(return_value=_MockSearchResponse())
+    mock_you.search_async = AsyncMock(return_value=_MockSearchResponse())
     mock_you.research_async = AsyncMock(return_value=_MockResearchResponse())
-    mock_you.contents.generate_async = AsyncMock(return_value=[_MockContentsResponse()])
+    mock_you.contents_async = AsyncMock(return_value=[_MockContentsResponse()])
 
     def _factory(*_args: Any, **_kwargs: Any):
         mock_cm = AsyncMock()
@@ -91,9 +91,9 @@ def _mock_you_client_raising(exc: Exception):
 
     def _factory(*_args: Any, **_kwargs: Any):
         mock_you = MagicMock()
-        mock_you.search.unified_async = AsyncMock(side_effect=exc)
+        mock_you.search_async = AsyncMock(side_effect=exc)
         mock_you.research_async = AsyncMock(side_effect=exc)
-        mock_you.contents.generate_async = AsyncMock(side_effect=exc)
+        mock_you.contents_async = AsyncMock(side_effect=exc)
         mock_cm = AsyncMock()
         mock_cm.__aenter__ = AsyncMock(return_value=mock_you)
         mock_cm.__aexit__ = AsyncMock(return_value=None)
@@ -253,7 +253,7 @@ async def test_search_passes_every_param_to_sdk(env: ActivityEnvironment):
     )
     with patch("youdotcom_temporal.activities.you_client", side_effect=factory):
         await env.run(youdotcom_search, inp)
-    assert mock_you.search.unified_async.call_args.kwargs == {
+    assert mock_you.search_async.call_args.kwargs == {
         "query": "python",
         "count": 5,
         "freshness": "pw",
@@ -280,7 +280,7 @@ async def test_contents_passes_formats_and_timeout_to_sdk(env: ActivityEnvironme
     inp = ContentsInput(urls=["https://a"], formats=["html", "markdown"], crawl_timeout=25)
     with patch("youdotcom_temporal.activities.you_client", side_effect=factory):
         await env.run(youdotcom_contents, inp)
-    assert mock_you.contents.generate_async.call_args.kwargs == {
+    assert mock_you.contents_async.call_args.kwargs == {
         "urls": ["https://a"],
         "formats": [models.ContentsFormats.HTML, models.ContentsFormats.MARKDOWN],
         "crawl_timeout": 25,
@@ -291,7 +291,7 @@ async def test_contents_defaults_to_markdown_format(env: ActivityEnvironment):
     mock_you, factory = _capturing_you_client()
     with patch("youdotcom_temporal.activities.you_client", side_effect=factory):
         await env.run(youdotcom_contents, ContentsInput(urls=["https://a"]))
-    assert mock_you.contents.generate_async.call_args.kwargs["formats"] == [
+    assert mock_you.contents_async.call_args.kwargs["formats"] == [
         models.ContentsFormats.MARKDOWN
     ]
 

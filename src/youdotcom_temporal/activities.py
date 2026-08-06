@@ -41,7 +41,7 @@ async def youdotcom_search(inp: SearchInput) -> dict[str, Any]:
         )
     try:
         async with you_client(cfg) as you:
-            res = await you.search.unified_async(
+            res = await you.search_async(
                 query=inp.query,
                 count=inp.count,
                 freshness=inp.freshness,
@@ -90,7 +90,7 @@ async def youdotcom_contents(inp: ContentsInput) -> dict[str, Any]:
         ) from exc
     try:
         async with you_client(cfg) as you:
-            res = await you.contents.generate_async(
+            res = await you.contents_async(
                 urls=inp.urls,
                 formats=formats,
                 crawl_timeout=inp.crawl_timeout,

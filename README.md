@@ -10,7 +10,7 @@ Exposes You.com API calls as Temporal Activities with proper error mapping, retr
 pip install youdotcom-temporal
 ```
 
-Requires Python 3.10+. Uses the official [`youdotcom`](https://pypi.org/project/youdotcom/) Python SDK (>=2.3.0) and [`temporalio`](https://pypi.org/project/temporalio/) (>=1.27.0).
+Requires Python 3.10+. Uses the official [`youdotcom`](https://pypi.org/project/youdotcom/) Python SDK (>=3.0.0) and [`temporalio`](https://pypi.org/project/temporalio/) (>=1.27.0).
 
 ## Quickstart
 
