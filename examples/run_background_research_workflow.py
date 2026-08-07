@@ -3,19 +3,17 @@ from __future__ import annotations
 import asyncio
 import uuid
 
-from hello_search_workflow import HelloSearch
+from hello_background_research_workflow import HelloBackgroundResearch
 from temporalio.client import Client
 from temporalio.common import WorkflowIDReusePolicy
 
 
 async def main() -> None:
     client = await Client.connect("localhost:7233")
-    # Use a fresh workflow id per invocation so the example can be re-run without
-    # the default `ALLOW_DUPLICATE_FAILED_ONLY` policy rejecting a re-use.
-    workflow_id = f"hello-search-workflow-{uuid.uuid4().hex[:8]}"
+    workflow_id = f"hello-background-research-{uuid.uuid4().hex[:8]}"
     result = await client.execute_workflow(
-        HelloSearch.run,
-        "what is the capital of france",
+        HelloBackgroundResearch.run,
+        "Compare quantum computing approaches for breaking RSA-2048",
         id=workflow_id,
         task_queue="you-search",
         id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE,

@@ -163,8 +163,10 @@ set_config(YouConfig(api_key="your-key"))  # worker-side only
 See the [`examples/`](examples/) directory:
 
 - `hello_search_workflow.py` - a simple search workflow with `RetryPolicy`
+- `hello_background_research_workflow.py` - long-running research via `youdotcom_research_background` (use `timeout_s=14400` and a multi-hour `start_to_close_timeout` for `frontier` effort)
 - `run_worker.py` - starts a worker with `YouPlugin`
 - `run_workflow.py` - executes the search workflow
+- `run_background_research_workflow.py` - executes the background research workflow
 
 ```bash
 # Terminal 1
@@ -173,8 +175,11 @@ temporal server start-dev
 # Terminal 2
 python examples/run_worker.py
 
-# Terminal 3
+# Terminal 3 (search example)
 python examples/run_workflow.py
+
+# Terminal 3 (background research example)
+python examples/run_background_research_workflow.py
 ```
 
 ## Development

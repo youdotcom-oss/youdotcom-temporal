@@ -1,30 +1,38 @@
 # Changelog
 
+All notable changes to `youdotcom-temporal` will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [Unreleased]
 
 ### Added
+- New activity `youdotcom_answer` and new `AnswerInput` dataclass for the Answer API (`you.answer_async()`)
+- New activity `youdotcom_finance_research` and new `FinanceResearchInput` dataclass for the Finance Research API (`you.finance_research_async()`, tiers: `deep`, `exhaustive`)
+- New activity `youdotcom_research_background` using the SDK's `research_helpers.research_and_wait_async()`; submits and polls long-running tasks until completion. Accepts the same `ResearchInput` plus a `timeout_s` field that controls how long to wait for SSE streaming before falling back to polling (defaults to 120s; set to 14400 for `frontier`)
+- New params on `SearchInput`: `offset`, `include_domains`, `exclude_domains`, `boost_domains`, `crawl_timeout`
+- New param on `ContentsInput`: `max_age` (cache freshness control in seconds; `0` always re-fetches)
+- New params on `ResearchInput`: `background`, `source_control`, `output_schema`, `timeout_s` (background only)
+- Integration tests covering all 6 activities against the real You.com API and a local Temporal server (`pytest -m integration`)
+- `py.typed` marker so consumers get type checking on the public API
 
 ### Changed
-
-### Deprecated
-
-### Breaking Changes
+- `youdotcom_search` now calls `you.search_async()` directly (was `you.search.unified_async()`)
+- `youdotcom_contents` now calls `you.contents_async()` directly (was `you.contents.generate_async()`)
+- `ResearchInput.research_effort` default changed from `"lite"` to `"standard"` to match the SDK default
+- `ResearchInput.research_effort` validation now accepts `frontier` (was: `lite`, `standard`, `deep`, `exhaustive`)
+- `pyproject.toml` dependency bumped: `youdotcom>=3.0.0,<4` (was: `>=2.3.0,<3`)
 
 ### Fixed
+- Error mappings updated to the SDK 3.0.0 class names: `UnauthorizedResponseError`, `ForbiddenResponseError`, `UnprocessableEntityResponseError`, `InternalServerErrorResponse`, `PaymentRequiredResponseError`
+- `examples/run_workflow.py` now generates a unique workflow id per invocation so re-runs work under the default `WorkflowIDReusePolicy`
 
-### Security
-
-## [0.1.0] - 2026-07-07
+## [0.1.0a1] — 2026-08-03
 
 ### Added
-
-- Initial release: `YouPlugin` (SimplePlugin) with three durable activities
-  (`youdotcom_search`, `youdotcom_research`, `youdotcom_contents`) wrapping the
-  You.com Python SDK for Temporal workflows.
-- `YouConfig` frozen dataclass with env-based resolution (`YDC_API_KEY`,
-  `YDC_SERVER_URL`) and programmatic override via `set_config()`.
-- `to_temporal_error()` maps SDK errors to Temporal `ApplicationError`
-  (auth errors non-retryable, 422 non-retryable, 402 non-retryable,
-  429 and 5xx passthrough for retry).
-- Sandboxed workflow runner with passthrough modules for SDK dependencies.
-- 42 unit tests covering config, error mapping, activities, and plugin.
+- Initial Alpha release
+- `youdotcom_search`, `youdotcom_research`, `youdotcom_contents` activities pinned to `youdotcom>=2.3.0,<3`
+- `YouPlugin` (Temporal `SimplePlugin`) registering all activities and adding the SDK's runtime modules to the workflow sandbox passthrough
+- Error mapping module (`_errors.py`) for 401/403 → `YouAuthError`, 422 → `YouValidationError`, 402 → `YouQuotaExhausted`, 5xx passthrough
+- Unit tests covering success paths, validation, and error mapping
