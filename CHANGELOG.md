@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New params on `ResearchInput`: `background`, `source_control`, `output_schema`, `timeout_s` (background only)
 - Integration tests covering all 6 activities against the real You.com API and a local Temporal server (`pytest -m integration`)
 - `py.typed` marker so consumers get type checking on the public API
+- `httpx.TimeoutException` mapped to retryable `YouTimeoutError` ApplicationError for cleaner Temporal UI
 
 ### Changed
 - `youdotcom_search` now calls `you.search_async()` directly (was `you.search.unified_async()`)
@@ -23,10 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ResearchInput.research_effort` default changed from `"lite"` to `"standard"` to match the SDK default
 - `ResearchInput.research_effort` validation now accepts `frontier` (was: `lite`, `standard`, `deep`, `exhaustive`)
 - `pyproject.toml` dependency bumped: `youdotcom>=3.0.0,<4` (was: `>=2.3.0,<3`)
+- `YouConfig.timeout_seconds` default increased from 30s to 300s (deep/exhaustive inline research can take 60-300s; Temporal's `start_to_close_timeout` is still the wall-clock ceiling)
+- Dev tooling consolidated under `[dependency-groups]` (removed duplicate `[project.optional-dependencies]`)
 
 ### Fixed
 - Error mappings updated to the SDK 3.0.0 class names: `UnauthorizedResponseError`, `ForbiddenResponseError`, `UnprocessableEntityResponseError`, `InternalServerErrorResponse`, `PaymentRequiredResponseError`
 - `examples/run_workflow.py` now generates a unique workflow id per invocation so re-runs work under the default `WorkflowIDReusePolicy`
+- `examples/run_worker.py` now registers both `HelloSearch` and `HelloBackgroundResearch` so the same worker serves both example workflows
+- README "Plugin path" example no longer shows an unnecessary `YouPlugin()` on `Client.connect` (only the worker needs it)
+- CI and publish workflows updated to `uv sync --group dev` after dropping `[project.optional-dependencies]`
 
 ## [0.1.0a1] — 2026-08-03
 

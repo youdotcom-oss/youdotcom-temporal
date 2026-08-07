@@ -8,7 +8,10 @@ from dataclasses import dataclass
 class YouConfig:
     api_key: str | None = None
     server_url: str | None = None
-    timeout_seconds: float = 30.0
+    # 300s covers deep/exhaustive inline research; search/answer/contents
+    # complete in <10s so the extra headroom is harmless. Temporal's
+    # start_to_close_timeout is the real wall-clock ceiling.
+    timeout_seconds: float = 300.0
 
     @classmethod
     def resolve(cls, override: YouConfig | None = None) -> YouConfig:
