@@ -1,6 +1,6 @@
 # youdotcom-temporal
 
-Durable [You.com](https://you.com) search, research, and contents Activities for [Temporal](https://temporal.io).
+Durable [You.com](https://you.com) search, answer, research, and contents Activities for [Temporal](https://temporal.io).
 
 Exposes You.com API calls as Temporal Activities with proper error mapping, retry semantics, and workflow sandbox support. Ships as a `SimplePlugin` for one-line setup, or as standalone activity functions for manual worker wiring.
 
@@ -10,7 +10,7 @@ Exposes You.com API calls as Temporal Activities with proper error mapping, retr
 pip install youdotcom-temporal
 ```
 
-Requires Python 3.10+. Uses the official [`youdotcom`](https://pypi.org/project/youdotcom/) Python SDK (>=2.3.0) and [`temporalio`](https://pypi.org/project/temporalio/) (>=1.27.0).
+Requires Python 3.10+. Uses the official [`youdotcom`](https://pypi.org/project/youdotcom/) Python SDK (>=3.0.0) and [`temporalio`](https://pypi.org/project/temporalio/) (>=1.27.0).
 
 ## Quickstart
 
@@ -69,10 +69,71 @@ worker = Worker(
 | Activity | Input | Description |
 |---|---|---|
 | `youdotcom_search` | `SearchInput` | Web and news search results |
+| `youdotcom_answer` | `AnswerInput` | Synthesized answer with inline citations |
 | `youdotcom_research` | `ResearchInput` | Multi-step research with citations |
+| `youdotcom_research_background` | `ResearchInput` | Long-running background research (submits, streams, polls until complete) |
+| `youdotcom_finance_research` | `FinanceResearchInput` | Finance-focused research with citations |
 | `youdotcom_contents` | `ContentsInput` | Webpage content as HTML or markdown |
 
 All activities return JSON-serializable dicts (via `model_dump(mode="json")`).
+
+### SearchInput
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `query` | `str` | (required) | Search query |
+| `count` | `int \| None` | `None` | Max results per section (1-100) |
+| `freshness` | `str \| None` | `None` | `day`, `week`, `month`, `year`, or date range |
+| `offset` | `int \| None` | `None` | Pagination offset |
+| `country` | `str \| None` | `None` | ISO 3166-1 alpha-2 country code |
+| `language` | `str \| None` | `None` | BCP 47 language code |
+| `safesearch` | `str \| None` | `None` | `off`, `moderate`, or `strict` |
+| `livecrawl` | `str \| None` | `None` | `web`, `news`, or `all` |
+| `livecrawl_formats` | `list[str] \| None` | `None` | `html` and/or `markdown` |
+| `include_domains` | `list[str] \| None` | `None` | Restrict to these domains (max 500) |
+| `exclude_domains` | `list[str] \| None` | `None` | Exclude these domains (max 500) |
+| `boost_domains` | `list[str] \| None` | `None` | Boost these domains in ranking (max 500) |
+| `crawl_timeout` | `int \| None` | `None` | Livecrawl timeout in seconds (1-60) |
+
+### AnswerInput
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `query` | `str` | (required) | Question to answer (max 400 chars) |
+| `freshness` | `str \| None` | `None` | `day`, `week`, `month`, `year`, or date range |
+| `country` | `str \| None` | `None` | ISO 3166-1 alpha-2 country code |
+| `language` | `str \| None` | `None` | BCP 47 language code |
+| `include_domains` | `list[str] \| None` | `None` | Restrict to these domains (max 500) |
+| `exclude_domains` | `list[str] \| None` | `None` | Exclude these domains (max 500) |
+| `boost_domains` | `list[str] \| None` | `None` | Boost these domains in ranking (max 500) |
+
+### ResearchInput
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `input` | `str` | (required) | Research question (max 40,000 chars) |
+| `research_effort` | `str` | `"standard"` | `lite`, `standard`, `deep`, `exhaustive`, or `frontier` |
+| `background` | `bool` | `False` | Queue as background task (returns task handle) |
+| `source_control` | `dict \| None` | `None` | Domain filters: `include_domains`, `exclude_domains`, `boost_domains`, `freshness`, `country` |
+| `output_schema` | `dict \| None` | `None` | JSON Schema for structured output (standard/deep/exhaustive only) |
+
+`youdotcom_research_background` accepts the same `ResearchInput` but always runs in background mode. It uses the SDK's `research_and_wait_async` helper to submit, stream, and poll until the task completes. For `frontier` effort, tasks can run up to 4 hours — set an appropriate `StartToClose` timeout on the workflow side.
+
+### FinanceResearchInput
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `input` | `str` | (required) | Financial research question |
+| `research_effort` | `str` | `"deep"` | `deep` or `exhaustive` |
+
+### ContentsInput
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `urls` | `list[str]` | (required) | URLs to fetch (max 10) |
+| `formats` | `list[str] \| None` | `None` | `markdown`, `html`, and/or `metadata` (default: `["markdown"]`) |
+| `crawl_timeout` | `int` | `10` | Per-URL timeout in seconds (1-60) |
+| `max_age` | `int \| None` | `None` | Max cache age in seconds (0 = always re-fetch) |
 
 ## Error handling
 

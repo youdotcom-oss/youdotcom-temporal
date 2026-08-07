@@ -10,18 +10,30 @@ except PackageNotFoundError:
 from .activities import (
     set_config,
     you_activities,
+    youdotcom_answer,
     youdotcom_contents,
+    youdotcom_finance_research,
     youdotcom_research,
+    youdotcom_research_background,
     youdotcom_search,
 )
 from .config import YouConfig
-from .models import ContentsInput, ResearchInput, SearchInput
+from .models import (
+    AnswerInput,
+    ContentsInput,
+    FinanceResearchInput,
+    ResearchInput,
+    SearchInput,
+)
 from .plugin import YouPlugin
 
 __all__ = [
     "youdotcom_search",
     "youdotcom_research",
+    "youdotcom_research_background",
     "youdotcom_contents",
+    "youdotcom_answer",
+    "youdotcom_finance_research",
     "you_activities",
     "set_config",
     "YouPlugin",
@@ -29,5 +41,7 @@ __all__ = [
     "SearchInput",
     "ResearchInput",
     "ContentsInput",
+    "AnswerInput",
+    "FinanceResearchInput",
     "__version__",
 ]
