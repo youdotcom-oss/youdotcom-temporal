@@ -36,7 +36,7 @@ from youdotcom_temporal import YouPlugin
 from hello_search_workflow import HelloSearch  # see examples/
 
 async def main():
-    client = await Client.connect("localhost:7233", plugins=[YouPlugin()])
+    client = await Client.connect("localhost:7233")
     worker = Worker(
         client,
         task_queue="you-search",
@@ -145,8 +145,11 @@ All activities return JSON-serializable dicts (via `model_dump(mode="json")`).
 | 402 | `YouQuotaExhausted` | No |
 | 429 | (passthrough) | Yes, Temporal backs off |
 | 5xx | (passthrough) | Yes, Temporal backs off |
+| HTTP timeout | `YouTimeoutError` | Yes, Temporal backs off |
 
 The SDK's built-in HTTP retries are disabled (`retry_config=None`) so Temporal is the single retry authority. Set `RetryPolicy` on `workflow.execute_activity` to control backoff and max attempts. See `examples/hello_search_workflow.py` for a complete example.
+
+The default HTTP timeout is 300s (`YouConfig.timeout_seconds`). This covers deep/exhaustive inline research calls. Override via `YouConfig(timeout_seconds=...)` if needed.
 
 ## Security
 

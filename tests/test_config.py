@@ -41,6 +41,6 @@ def test_global_override_wins_over_env(monkeypatch):
 
 def test_defaults():
     cfg = YouConfig()
-    assert cfg.timeout_seconds == 30.0
+    assert cfg.timeout_seconds == 300.0
     assert cfg.api_key is None
     assert cfg.server_url is None

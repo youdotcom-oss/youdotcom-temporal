@@ -138,3 +138,11 @@ def test_unknown_error_passthrough():
     err = RuntimeError("something went wrong")
     result = to_temporal_error(err)
     assert result is err
+
+
+def test_http_timeout_maps_to_retryable_error():
+    err = httpx.ReadTimeout("timed out")
+    result = to_temporal_error(err)
+    assert isinstance(result, ApplicationError)
+    assert result.type == "YouTimeoutError"
+    assert result.non_retryable is False

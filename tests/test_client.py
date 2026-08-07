@@ -25,6 +25,14 @@ async def test_client_kwargs_without_server_url():
         "timeout_ms": 30000,
     }
 
+async def test_client_default_timeout_is_300s():
+    cfg = YouConfig(api_key="k")
+    assert cfg.timeout_seconds == 300.0
+    with patch("youdotcom_temporal._client.You", return_value=_fake_you()) as you_cls:
+        async with you_client(cfg):
+            pass
+    assert you_cls.call_args.kwargs["timeout_ms"] == 300000
+
 
 async def test_client_includes_server_url_when_set():
     cfg = YouConfig(api_key="k", server_url="https://custom", timeout_seconds=5.0)

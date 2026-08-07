@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import httpx
 from temporalio.exceptions import ApplicationError
 from youdotcom import errors as yerr
 
@@ -63,4 +64,8 @@ def to_temporal_error(exc: Exception) -> Exception:
                 "You.com rejected the request", type="YouValidationError", non_retryable=True
             )
         return exc
+    if isinstance(exc, httpx.TimeoutException):
+        return ApplicationError(
+            "You.com request timed out", type="YouTimeoutError", non_retryable=False
+        )
     return exc
