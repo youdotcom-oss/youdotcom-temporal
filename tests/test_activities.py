@@ -555,6 +555,22 @@ async def test_research_background_passes_params_to_helper(env: ActivityEnvironm
     assert isinstance(call_kwargs["source_control"], models.SourceControl)
     assert call_kwargs["source_control"].include_domains == ["arxiv.org"]
     assert call_kwargs["output_schema"] == {"type": "object", "properties": {}}
+    # Default timeout_s when not specified by user
+    assert call_kwargs["timeout_s"] == 120.0
+
+
+async def test_research_background_passes_custom_timeout(env: ActivityEnvironment):
+    inp = ResearchInput(input="q", research_effort="frontier", timeout_s=14400.0)
+    with (
+        patch("youdotcom_temporal.activities.you_client", side_effect=_mock_you_client),
+        patch(
+            "youdotcom_temporal.activities.research_and_wait_async",
+            new_callable=AsyncMock,
+            return_value=_MockTaskDetail(),
+        ) as mock_wait,
+    ):
+        await env.run(youdotcom_research_background, inp)
+    assert mock_wait.call_args.kwargs["timeout_s"] == 14400.0
 
 
 # ---------------------------------------------------------------------------

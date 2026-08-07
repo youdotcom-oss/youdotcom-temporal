@@ -197,6 +197,7 @@ async def youdotcom_research_background(inp: ResearchInput) -> dict[str, Any]:
                 research_effort=effort,
                 source_control=source_control,
                 output_schema=inp.output_schema,
+                timeout_s=inp.timeout_s if inp.timeout_s is not None else 120.0,
             )
         return task_detail.model_dump(mode="json")
     except Exception as exc:

@@ -116,8 +116,9 @@ All activities return JSON-serializable dicts (via `model_dump(mode="json")`).
 | `background` | `bool` | `False` | Queue as background task (returns task handle) |
 | `source_control` | `dict \| None` | `None` | Domain filters: `include_domains`, `exclude_domains`, `boost_domains`, `freshness`, `country` |
 | `output_schema` | `dict \| None` | `None` | JSON Schema for structured output (standard/deep/exhaustive only) |
+| `timeout_s` | `float \| None` | `None` | (background activity only) Max seconds to wait for SSE streaming before falling back to polling. Defaults to 120s; use 14400 (4h) for frontier tasks |
 
-`youdotcom_research_background` accepts the same `ResearchInput` but always runs in background mode. It uses the SDK's `research_and_wait_async` helper to submit, stream, and poll until the task completes. For `frontier` effort, tasks can run up to 4 hours — set an appropriate `StartToClose` timeout on the workflow side.
+`youdotcom_research_background` accepts the same `ResearchInput` but always runs in background mode. It uses the SDK's `research_and_wait_async` helper to submit, stream, and poll until the task completes. For `frontier` effort, set `timeout_s=14400` and an appropriate `StartToClose` timeout on the workflow side.
 
 ### FinanceResearchInput
 

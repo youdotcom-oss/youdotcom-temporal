@@ -28,6 +28,10 @@ class ResearchInput:
     background: bool = False
     source_control: dict[str, Any] | None = None
     output_schema: dict[str, Any] | None = None
+    # Only used by youdotcom_research_background: max seconds to wait for
+    # SSE streaming before falling back to polling. Default 120s, use
+    # 14400 (4h) for frontier tasks.
+    timeout_s: float | None = None
 
 
 @dataclass
