@@ -185,7 +185,7 @@ python examples/run_background_research_workflow.py
 ## Development
 
 ```bash
-uv sync --all-extras
+uv sync --group dev
 uv run ruff check
 uv run mypy src
 uv run pytest                          # unit tests (no network)

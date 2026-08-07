@@ -32,12 +32,9 @@ Repository = "https://github.com/youdotcom-oss/youdotcom-temporal"
 Issues = "https://github.com/youdotcom-oss/youdotcom-temporal/issues"
 Changelog = "https://github.com/youdotcom-oss/youdotcom-temporal/releases"
 
-[project.optional-dependencies]
-dev = ["pytest>=8", "pytest-asyncio>=0.24", "mypy", "ruff"]
-
 [dependency-groups]
-# Single source of truth for dev tooling — mirrors [project.optional-dependencies]
-# so `pip install --group dev -e .` works in CI alongside `uv sync --all-extras`.
+# Single source of truth for dev tooling — `uv sync --group dev` or
+# `pip install --group dev -e .` both resolve this.
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "mypy", "ruff"]
 
 [build-system]
