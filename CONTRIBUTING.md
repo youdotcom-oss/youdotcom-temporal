@@ -7,7 +7,7 @@ Thanks for your interest in contributing to `youdotcom-temporal`.
 ```bash
 git clone git@github.com:youdotcom-oss/youdotcom-temporal.git
 cd youdotcom-temporal
-uv sync --all-extras
+uv sync --group dev
 ```
 
 Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
