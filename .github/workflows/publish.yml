@@ -89,7 +89,7 @@ jobs:
           fi
           echo "Version format valid: $VERSION"
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
 
@@ -132,7 +132,7 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
 
