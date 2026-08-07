@@ -1,7 +1,7 @@
 [project]
 name = "youdotcom-temporal"
 version = "0.1.0"
-description = "Durable You.com search, research, and contents Activities for Temporal."
+description = "Durable You.com search, answer, research, and contents Activities for Temporal."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -22,7 +22,7 @@ dependencies = [
     # Floor, not a pin: SimplePlugin needs 1.19.0+; use a recent stable floor and
     # let CI test the latest. Upper bound only guards the next major.
     "temporalio>=1.27.0,<2",
-    "youdotcom>=2.3.0,<3",
+    "youdotcom>=3.0.0,<4",
 ]
 
 [project.urls]
@@ -32,7 +32,9 @@ Repository = "https://github.com/youdotcom-oss/youdotcom-temporal"
 Issues = "https://github.com/youdotcom-oss/youdotcom-temporal/issues"
 Changelog = "https://github.com/youdotcom-oss/youdotcom-temporal/releases"
 
-[project.optional-dependencies]
+[dependency-groups]
+# Single source of truth for dev tooling — `uv sync --group dev` or
+# `pip install --group dev -e .` both resolve this.
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "mypy", "ruff"]
 
 [build-system]
@@ -41,6 +43,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/youdotcom_temporal"]
+include = ["src/youdotcom_temporal/py.typed"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -60,3 +63,4 @@ select = ["E", "F", "I", "UP"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
+
