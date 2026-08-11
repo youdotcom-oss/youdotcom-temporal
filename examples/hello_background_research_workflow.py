@@ -39,6 +39,7 @@ class HelloBackgroundResearch:
             # Wall-clock ceiling for the activity. Lite: 5min is plenty.
             # Frontier: bump to 4h+ and set ResearchInput.timeout_s=14400.
             start_to_close_timeout=timedelta(minutes=5),
+            summary=f"you.com research: {question}",
             retry_policy=RetryPolicy(
                 maximum_attempts=3,
                 maximum_interval=timedelta(seconds=60),
