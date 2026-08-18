@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-08-18
+
 ### Fixed
 - `youdotcom_temporal/__init__.py` resolves its public names lazily (PEP 562) instead of importing the Activity layer eagerly. Importing the package no longer pulls in the You.com SDK or `urllib.request`, so a Workflow file can import from `youdotcom_temporal` at module scope without `workflow.unsafe.imports_passed_through()` and without registering `YouPlugin`. Previously this failed at Worker construction with `RestrictedWorkflowAccessError`, and no passthrough block could fix it because Python imports a parent package before the submodule body runs. Public imports are unchanged. Note that importing an Activity *function* still loads the SDK, since that is the module it lives in — reference Activities by name to keep a Workflow SDK-free
+- `tests/test_replay_safety.py` could never pass: its Workflow was defined in the test module, and the sandbox re-imports that module, re-executing the module-level `shutil.which("temporal")` in the file's own skip marker. The Workflow now lives in its own module, and the test runs
+
+### Changed
+- CI installs the Temporal CLI, so the tests needing a local dev server actually execute instead of skipping silently on every run
 
 ## [1.0.0] — 2026-08-07
 
