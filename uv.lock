@@ -764,19 +764,11 @@ wheels = [
 
 [[package]]
 name = "youdotcom-temporal"
-version = "0.1.0"
+version = "1.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "temporalio" },
     { name = "youdotcom" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
 ]
 
 [package.dev-dependencies]
@@ -789,14 +781,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mypy", marker = "extra == 'dev'" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
-    { name = "ruff", marker = "extra == 'dev'" },
     { name = "temporalio", specifier = ">=1.27.0,<2" },
     { name = "youdotcom", specifier = ">=3.0.0,<4" },
 ]
-provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [
