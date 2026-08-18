@@ -5,6 +5,11 @@ All notable changes to `youdotcom-temporal` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- `youdotcom_temporal/__init__.py` resolves its public names lazily (PEP 562) instead of importing the Activity layer eagerly. Importing the package no longer pulls in the You.com SDK or `urllib.request`, so a Workflow file can import from `youdotcom_temporal` at module scope without `workflow.unsafe.imports_passed_through()` and without registering `YouPlugin`. Previously this failed at Worker construction with `RestrictedWorkflowAccessError`, and no passthrough block could fix it because Python imports a parent package before the submodule body runs. Public imports are unchanged. Note that importing an Activity *function* still loads the SDK, since that is the module it lives in — reference Activities by name to keep a Workflow SDK-free
+
 ## [1.0.0] — 2026-08-07
 
 ### Added
