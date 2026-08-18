@@ -31,6 +31,15 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev
 
+      # Several tests need a real Temporal dev server (replay safety, sandbox
+      # registration). Without the CLI they skip silently, which is how a
+      # sandbox bug reached v1.0.0 -- an always-skipped test is indistinguishable
+      # from one that does not exist.
+      - name: Install Temporal CLI
+        run: |
+          curl -sSf https://temporal.download/cli.sh | sh
+          echo "$HOME/.temporalio/bin" >> "$GITHUB_PATH"
+
       - name: Lint
         run: uv run ruff check
 
