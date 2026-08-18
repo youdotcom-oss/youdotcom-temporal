@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import shutil
-from datetime import timedelta
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from _replay_demo_workflow import ReplayDemo
 from temporalio import workflow
-from temporalio.common import RetryPolicy
 from temporalio.testing import WorkflowEnvironment
 from temporalio.worker import Replayer, Worker
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
 
 with workflow.unsafe.imports_passed_through():
-    from youdotcom_temporal import SearchInput, YouPlugin, youdotcom_search
+    from youdotcom_temporal import YouPlugin
     from youdotcom_temporal.plugin import _you_workflow_runner
 
 pytestmark = pytest.mark.skipif(
@@ -36,19 +35,6 @@ def _mock_you_client(*_a: Any, **_kw: Any) -> Any:
     return cm
 
 
-@workflow.defn
-class _ReplayDemo:
-    @workflow.run
-    async def run(self, query: str) -> dict:
-        return await workflow.execute_activity(
-            youdotcom_search,
-            SearchInput(query=query, count=3),
-            start_to_close_timeout=timedelta(seconds=30),
-            summary=f"you.com search: {query}",
-            retry_policy=RetryPolicy(maximum_attempts=2),
-        )
-
-
 async def test_activity_not_re_invoked_on_replay(monkeypatch: pytest.MonkeyPatch) -> None:
     """Activities must not re-execute on replay (no duplicate side effects).
 
@@ -68,11 +54,11 @@ async def test_activity_not_re_invoked_on_replay(monkeypatch: pytest.MonkeyPatch
             async with Worker(
                 env.client,
                 task_queue="replay-safety",
-                workflows=[_ReplayDemo],
+                workflows=[ReplayDemo],
                 plugins=[YouPlugin()],
             ):
                 result = await env.client.execute_workflow(
-                    _ReplayDemo.run,
+                    ReplayDemo.run,
                     "hello",
                     id="replay-safety-wf",
                     task_queue="replay-safety",
@@ -88,7 +74,7 @@ async def test_activity_not_re_invoked_on_replay(monkeypatch: pytest.MonkeyPatch
         # re-executing activities, so the SDK factory must NOT be called again.
         # Use the plugin's sandbox runner so replay matches production.
         replayer = Replayer(
-            workflows=[_ReplayDemo],
+            workflows=[ReplayDemo],
             workflow_runner=_you_workflow_runner(SandboxedWorkflowRunner()),
         )
         replay = await replayer.replay_workflow(history, raise_on_replay_failure=False)

@@ -13,10 +13,16 @@ loads on first attribute access instead of at import time.
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from temporalio import workflow
+from temporalio.testing import WorkflowEnvironment
+from temporalio.worker import Worker
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
 
 import youdotcom_temporal
@@ -71,6 +77,61 @@ def test_public_names_still_resolve():
 
     assert youdotcom_temporal.YouPlugin is YouPlugin
     assert sorted(dir(youdotcom_temporal)) == sorted(youdotcom_temporal.__all__)
+
+
+class _MockSearchResponse:
+    def model_dump(self, mode: str = "json") -> dict[str, Any]:
+        return {"results": [{"title": "T", "url": "https://example.com"}]}
+
+
+def _mock_you_client(*_a: Any, **_kw: Any) -> Any:
+    mock_you = MagicMock()
+    mock_you.search_async = AsyncMock(return_value=_MockSearchResponse())
+    cm = AsyncMock()
+    cm.__aenter__ = AsyncMock(return_value=mock_you)
+    cm.__aexit__ = AsyncMock(return_value=None)
+    return cm
+
+
+@pytest.mark.skipif(
+    shutil.which("temporal") is None,
+    reason="needs the local Temporal dev server CLI",
+)
+async def test_real_worker_runs_a_workflow_that_imports_the_package(monkeypatch):
+    """End-to-end against a real server, with no plugin and no passthrough.
+
+    ``prepare_workflow`` exercises the right code path, but only a real Worker
+    proves the whole thing. This registers the Activity explicitly rather than
+    through ``YouPlugin``, so nothing supplies a sandbox passthrough -- exactly
+    the shape a caller in another Namespace has. On the pre-fix code this fails
+    with "Failed validating workflow" and a restricted ``urllib.request``.
+    """
+    monkeypatch.setenv("YDC_API_KEY", "test-key")
+    from _unwrapped_import_workflow import UnwrappedImportWorkflow
+
+    from youdotcom_temporal.activities import youdotcom_search
+
+    env = await WorkflowEnvironment.start_local(
+        dev_server_existing_path=shutil.which("temporal")
+    )
+    async with env:
+        with patch(
+            "youdotcom_temporal.activities.you_client", side_effect=_mock_you_client
+        ):
+            async with Worker(
+                env.client,
+                task_queue="lazy-exports-e2e",
+                workflows=[UnwrappedImportWorkflow],
+                activities=[youdotcom_search],  # note: no plugins=[YouPlugin()]
+            ):
+                result = await env.client.execute_workflow(
+                    UnwrappedImportWorkflow.run,
+                    "hello",
+                    id="lazy-exports-e2e-wf",
+                    task_queue="lazy-exports-e2e",
+                )
+
+    assert result["results"][0]["url"] == "https://example.com"
 
 
 def test_unknown_attribute_still_raises_attribute_error():
