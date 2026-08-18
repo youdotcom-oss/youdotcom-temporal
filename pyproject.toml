@@ -1,6 +1,6 @@
 [project]
 name = "youdotcom-temporal"
-version = "1.0.0"
+version = "1.0.1"
 description = "Durable You.com search, answer, research, and contents Activities for Temporal."
 readme = "README.md"
 requires-python = ">=3.10"
