@@ -23,7 +23,7 @@ dependencies = [
     # Floor, not a pin: SimplePlugin needs 1.19.0+; use a recent stable floor and
     # let CI test the latest. Upper bound only guards the next major.
     "temporalio>=1.27.0,<2",
-    "youdotcom>=3.0.0,<4",
+    "youdotcom>=3.1.2,<4",
 ]
 
 [project.urls]
