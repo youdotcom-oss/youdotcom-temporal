@@ -236,6 +236,42 @@ async def test_search_passes_every_param_to_sdk(env: ActivityEnvironment):
     }
 
 
+async def test_search_passes_extraction_to_sdk(env: ActivityEnvironment):
+    mock_you, factory = _capturing_you_client()
+    inp = SearchInput(
+        query="python",
+        extraction={
+            "extraction_mode": "full_page",
+            "full_page": {"extraction_formats": ["markdown"]},
+        },
+    )
+    with patch("youdotcom_temporal.activities.you_client", side_effect=factory):
+        await env.run(youdotcom_search, inp)
+    kwargs = mock_you.search_async.call_args.kwargs
+    assert kwargs["extraction"] == {
+        "extraction_mode": "full_page",
+        "full_page": {"extraction_formats": ["markdown"]},
+    }
+    assert "livecrawl" not in kwargs
+    assert "livecrawl_formats" not in kwargs
+
+
+async def test_search_extraction_takes_priority_over_livecrawl(env: ActivityEnvironment):
+    mock_you, factory = _capturing_you_client()
+    inp = SearchInput(
+        query="python",
+        livecrawl="always",
+        livecrawl_formats=["markdown"],
+        extraction={"extraction_mode": "highlights"},
+    )
+    with patch("youdotcom_temporal.activities.you_client", side_effect=factory):
+        await env.run(youdotcom_search, inp)
+    kwargs = mock_you.search_async.call_args.kwargs
+    assert kwargs["extraction"] == {"extraction_mode": "highlights"}
+    assert "livecrawl" not in kwargs
+    assert "livecrawl_formats" not in kwargs
+
+
 # ---------------------------------------------------------------------------
 # Research activity
 # ---------------------------------------------------------------------------

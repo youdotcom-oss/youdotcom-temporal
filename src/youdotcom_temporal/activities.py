@@ -48,21 +48,25 @@ async def youdotcom_search(inp: SearchInput) -> dict[str, Any]:
         )
     try:
         async with you_client(cfg) as you:
-            res = await you.search_async(
-                query=inp.query,
-                count=inp.count,
-                freshness=inp.freshness,
-                offset=inp.offset,
-                country=inp.country,
-                language=inp.language,
-                safesearch=inp.safesearch,
-                livecrawl=inp.livecrawl,
-                livecrawl_formats=inp.livecrawl_formats,
-                include_domains=inp.include_domains,
-                exclude_domains=inp.exclude_domains,
-                boost_domains=inp.boost_domains,
-                crawl_timeout=inp.crawl_timeout,
-            )
+            search_kwargs: dict[str, Any] = {
+                "query": inp.query,
+                "count": inp.count,
+                "freshness": inp.freshness,
+                "offset": inp.offset,
+                "country": inp.country,
+                "language": inp.language,
+                "safesearch": inp.safesearch,
+                "include_domains": inp.include_domains,
+                "exclude_domains": inp.exclude_domains,
+                "boost_domains": inp.boost_domains,
+                "crawl_timeout": inp.crawl_timeout,
+            }
+            if inp.extraction is not None:
+                search_kwargs["extraction"] = inp.extraction
+            else:
+                search_kwargs["livecrawl"] = inp.livecrawl
+                search_kwargs["livecrawl_formats"] = inp.livecrawl_formats
+            res = await you.search_async(**search_kwargs)
         return res.model_dump(mode="json")
     except Exception as exc:
         raise to_temporal_error(exc) from exc
