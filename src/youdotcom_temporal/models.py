@@ -29,9 +29,9 @@ class ResearchInput:
     background: bool = False
     source_control: dict[str, Any] | None = None
     output_schema: dict[str, Any] | None = None
-    # Only used by youdotcom_research_background: max seconds to wait for
-    # SSE streaming before falling back to polling. Default 120s, use
-    # 14400 (4h) for frontier tasks.
+    # Only used by youdotcom_research_background: max seconds to wait for the
+    # task to complete (SSE streaming + polling). When None, the SDK derives a
+    # default from research_effort: 600s for standard, 14400s (4h) for frontier.
     timeout_s: float | None = None
 
 

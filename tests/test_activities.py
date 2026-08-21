@@ -591,8 +591,8 @@ async def test_research_background_passes_params_to_helper(env: ActivityEnvironm
     assert isinstance(call_kwargs["source_control"], models.SourceControl)
     assert call_kwargs["source_control"].include_domains == ["arxiv.org"]
     assert call_kwargs["output_schema"] == {"type": "object", "properties": {}}
-    # Default timeout_s when not specified by user
-    assert call_kwargs["timeout_s"] == 120.0
+    # timeout_s forwarded as-is (None) so the SDK derives the effort-based default
+    assert call_kwargs["timeout_s"] is None
 
 
 async def test_research_background_passes_custom_timeout(env: ActivityEnvironment):
