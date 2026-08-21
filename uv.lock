@@ -757,16 +757,16 @@ wheels = [
 
 [[package]]
 name = "youdotcom"
-version = "3.0.0"
+version = "3.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpcore" },
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/27/78/841c142d36037411e6c8d461e4b2e9ffcf106d46c3d3271e2208e2fc47c0/youdotcom-3.0.0.tar.gz", hash = "sha256:e425805ab11b9e7221ecd766f2fe55fe950cb8ed6e4da17d50b8a96ea93d42ab", size = 106479, upload-time = "2026-08-06T18:05:46.89Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/38/83/e495bf7682785e56d5687a409e23757aae1395cca3e54a8e1daa38fe1d25/youdotcom-3.1.1.tar.gz", hash = "sha256:f2008847a881a41c84016baa7ec6f3224969908fb81132398e8c1428418a9602", size = 116688, upload-time = "2026-08-12T18:23:22.62Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/81/da737799f0e1ac01eaaa41a2ef14ef43ecd68d7d494eb76108e329499046/youdotcom-3.0.0-py3-none-any.whl", hash = "sha256:141c601ef8a9e448348b96dc585e00792d3ef597bc26e6429bbb8570b0037e99", size = 99999, upload-time = "2026-08-06T18:05:45.689Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/18/4a35e8ee8e37f18290a49ead01d7a5f23b8023dd328b3879a30a1d323602/youdotcom-3.1.1-py3-none-any.whl", hash = "sha256:d46e8657d4906218817c7850c6bdf2a36cda4efd75abca8c92190149193d9e1f", size = 105118, upload-time = "2026-08-12T18:23:21.462Z" },
 ]
 
 [[package]]
