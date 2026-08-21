@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `SearchInput.extraction` field accepts the SDK's new `extraction` object (`{"extraction_mode": "highlights" | "full_page", ...}`). When set, it takes priority over the deprecated `livecrawl` / `livecrawl_formats` fields and is passed to `you.search_async(extraction=...)` instead, avoiding the SDK's `ValueError` on dual-set. The legacy fields remain accepted for backward compatibility
+
 ### Changed
 - Python SDK floor bumped to `youdotcom>=3.1.2,<4` (was `>=3.0.0,<4`). The 3.1.2 release ships the `X-Client-Info` attribution header and the `app_name` / `app_version` / `app_title` / `app_url` constructor kwargs on `You`
 - The plugin now passes `app_name="youdotcom-temporal"` and `app_version=<package version>` to the `You(...)` constructor instead of mutating `client.sdk_configuration.user_agent` post-construction. Each outbound request carries `X-Client-Info: sdk; client=youdotcom-temporal/<version>; ua=python/<v> httpx/<v>`; the SDK's own `user-agent` stays as `youdotcom-python-sdk/<v>`. The `_USER_AGENT` constant is removed

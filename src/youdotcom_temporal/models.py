@@ -15,6 +15,7 @@ class SearchInput:
     safesearch: str | None = None
     livecrawl: str | None = None
     livecrawl_formats: list[str] | None = None
+    extraction: dict[str, Any] | None = None
     include_domains: list[str] | None = None
     exclude_domains: list[str] | None = None
     boost_domains: list[str] | None = None

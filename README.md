@@ -88,8 +88,9 @@ All activities return JSON-serializable dicts (via `model_dump(mode="json")`).
 | `country` | `str \| None` | `None` | ISO 3166-1 alpha-2 country code |
 | `language` | `str \| None` | `None` | BCP 47 language code |
 | `safesearch` | `str \| None` | `None` | `off`, `moderate`, or `strict` |
-| `livecrawl` | `str \| None` | `None` | `web`, `news`, or `all` |
-| `livecrawl_formats` | `list[str] \| None` | `None` | `html` and/or `markdown` |
+| `livecrawl` | `str \| None` | `None` | Deprecated; use `extraction`. `web`, `news`, or `all` |
+| `livecrawl_formats` | `list[str] \| None` | `None` | Deprecated; use `extraction`. `html` and/or `markdown` |
+| `extraction` | `dict \| None` | `None` | Extraction config: `{"extraction_mode": "highlights" \| "full_page", "full_page": {"extraction_formats": [...]}}`. Takes priority over `livecrawl` / `livecrawl_formats` |
 | `include_domains` | `list[str] \| None` | `None` | Restrict to these domains (max 500) |
 | `exclude_domains` | `list[str] \| None` | `None` | Exclude these domains (max 500) |
 | `boost_domains` | `list[str] \| None` | `None` | Boost these domains in ranking (max 500) |
