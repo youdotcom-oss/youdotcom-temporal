@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-08-21
+
 ### Added
 - `SearchInput.extraction` field accepts the SDK's new `extraction` object (`{"extraction_mode": "highlights" | "full_page", ...}`). When set, it takes priority over the deprecated `livecrawl` / `livecrawl_formats` fields and is passed to `you.search_async(extraction=...)` instead, avoiding the SDK's `ValueError` on dual-set. The legacy fields remain accepted for backward compatibility
 
