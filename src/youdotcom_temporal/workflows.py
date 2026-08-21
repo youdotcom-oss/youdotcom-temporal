@@ -128,9 +128,12 @@ _RETRY = RetryPolicy(
 _RETRY_RESEARCH = RetryPolicy(maximum_attempts=1)
 
 # The deadline research_and_wait_async derives from research_effort when
-# ResearchInput.timeout_s is None. Mirrored here only to size the ceiling below;
-# the Activity forwards timeout_s untouched, so the SDK remains the one place
-# that decides the deadline. If the SDK's own values change, these follow.
+# ResearchInput.timeout_s is None (600s default, 14400s for frontier). The
+# Activity currently substitutes 120s when timeout_s is None, so the SDK's
+# effort-based derivation does not fire; these constants size the ceiling for
+# the case where that fallback is removed and the SDK derives the deadline
+# itself. The ceiling (4h15m) is well above either value, so it is safe either
+# way.
 _BACKGROUND_TIMEOUT_S = 600.0
 _BACKGROUND_TIMEOUT_S_BY_EFFORT = {"frontier": 14400.0}
 

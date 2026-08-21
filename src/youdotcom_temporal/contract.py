@@ -14,13 +14,11 @@ since the SDK models are pydantic::
     client = await Client.connect(..., data_converter=pydantic_data_converter)
 
 Sandbox note:
-    The SDK import below is wrapped in ``imports_passed_through()`` because
-    ``youdotcom/__init__`` currently imports its transport layer eagerly, which
-    pulls ``urllib.request`` and would be rejected by the Workflow sandbox.
-    Wrapping it here means a caller Workflow can import this module directly
-    without needing the escape hatch itself. Once the SDK resolves its exports
-    lazily (DX-776) the wrapper becomes belt-and-braces rather than load-bearing,
-    and importing this contract stops pulling the HTTP stack at all.
+    The SDK import below is wrapped in ``imports_passed_through()`` so a caller
+    Workflow can import this module directly without needing its own escape
+    hatch. The SDK has resolved its exports lazily (PEP 562) since 3.1.2, so
+    ``import youdotcom`` no longer pulls ``urllib.request`` or ``httpx`` into
+    ``sys.modules``; the wrapper is belt-and-braces rather than load-bearing.
 """
 
 from __future__ import annotations

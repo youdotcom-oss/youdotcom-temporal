@@ -26,9 +26,9 @@ Caller-side note:
 
     Either import is safe inside a Workflow sandbox without an escape hatch, as
     the contract wraps its own SDK import. It does load the You.com SDK, which
-    is deliberate -- results are the SDK's response models. Once the SDK
-    resolves its exports lazily (DX-776) that import stops pulling the HTTP
-    stack with it.
+    is deliberate -- results are the SDK's response models. The SDK has resolved
+    its exports lazily (PEP 562) since 3.1.2, so that import no longer pulls the
+    HTTP stack with it.
 
 Cancellation:
     Cancelling an Operation cancels the backing Workflow, but not the upstream
