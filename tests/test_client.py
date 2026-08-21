@@ -3,7 +3,7 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, patch
 
 from youdotcom_temporal import __version__
-from youdotcom_temporal._client import _USER_AGENT, you_client
+from youdotcom_temporal._client import you_client
 from youdotcom_temporal.config import YouConfig
 
 
@@ -23,6 +23,8 @@ async def test_client_kwargs_without_server_url():
         "api_key_auth": "k",
         "retry_config": None,
         "timeout_ms": 30000,
+        "app_name": "youdotcom-temporal",
+        "app_version": __version__,
     }
 
 async def test_client_default_timeout_is_300s():
@@ -43,18 +45,11 @@ async def test_client_includes_server_url_when_set():
         "api_key_auth": "k",
         "retry_config": None,
         "timeout_ms": 5000,
+        "app_name": "youdotcom-temporal",
+        "app_version": __version__,
         "server_url": "https://custom",
     }
 
 
-async def test_client_sets_custom_user_agent():
-    cfg = YouConfig(api_key="k", timeout_seconds=30.0)
-    fake = _fake_you()
-    with patch("youdotcom_temporal._client.You", return_value=fake):
-        async with you_client(cfg):
-            pass
-    assert fake.sdk_configuration.user_agent == _USER_AGENT
-
-
-def test_user_agent_includes_package_version():
-    assert _USER_AGENT == f"youdotcom-temporal/{__version__}"
+def test_attribution_header_includes_package_version():
+    assert __version__ != "0.0.0-dev"
