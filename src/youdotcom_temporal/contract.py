@@ -31,7 +31,7 @@ from temporalio import workflow
 with workflow.unsafe.imports_passed_through():
     from youdotcom.models import (
         AnswerResponse,
-        Contents,
+        ContentsResponse,
         FinanceResearchResponse,
         ResearchResponse,
         SearchResponse,
@@ -49,9 +49,9 @@ from youdotcom_temporal.models import (
 __all__ = [
     "AnswerRequest",
     "AnswerResponse",
-    "Contents",
     "ContentsOutput",
     "ContentsRequest",
+    "ContentsResponse",
     "FinanceResearchRequest",
     "FinanceResearchResponse",
     "ResearchRequest",
@@ -122,9 +122,9 @@ class FinanceResearchRequest:
 
 @dataclass
 class ContentsOutput:
-    """One `Contents` per requested URL, in request order."""
+    """One `ContentsResponse` per requested URL, in request order."""
 
-    results: list[Contents]
+    results: list[ContentsResponse]
 
 
 # --------------------------------------------------------------------------- #

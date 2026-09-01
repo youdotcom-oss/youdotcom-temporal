@@ -58,8 +58,8 @@ with workflow.unsafe.imports_passed_through():
     )
     from youdotcom_temporal.contract import (
         AnswerResponse,
-        Contents,
         ContentsOutput,
+        ContentsResponse,
         FinanceResearchResponse,
         ResearchResponse,
         SearchResponse,
@@ -231,13 +231,26 @@ class YouContentsWorkflow:
                 type="YouResponseShapeError",
                 non_retryable=True,
             )
-        return ContentsOutput(results=[_validate(Contents, c) for c in documents])
+        return ContentsOutput(
+            results=[_validate(ContentsResponse, c) for c in documents]
+        )
 
 
 @workflow.defn
 class YouResearchWorkflow:
     @workflow.run
     async def run(self, inp: ResearchInput) -> ResearchResponse:
+        # `background=True` returns a task handle, which can never validate as
+        # this Operation's ResearchResponse result -- the caller would pay for
+        # the research task and then get an opaque shape error.
+        # `research_background` is the Operation for that mode.
+        if inp.background:
+            raise ApplicationError(
+                "You.com research Operation does not accept background=True; "
+                "use the research_background Operation.",
+                type="YouValidationError",
+                non_retryable=True,
+            )
         payload = await workflow.execute_activity(
             youdotcom_research,
             inp,

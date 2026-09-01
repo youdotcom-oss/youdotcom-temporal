@@ -102,6 +102,11 @@ async def test_live_operation_round_trips(live_nexus_env, caller, arg, probe):
     # `contents` is the one Operation with a dataclass envelope around SDK
     # models, so it serializes element by element.
     if probe == "contents":
+        # The elements are the contents endpoint's own model, so every field
+        # it returns must survive. Validating against the wrong SDK model
+        # (the search extraction shape) silently dropped url/title/metadata.
+        assert result.results[0].url == arg
+        assert result.results[0].title
         payload = [c.model_dump(mode="json") for c in result.results]
     else:
         assert hasattr(result, "model_dump"), f"{probe} did not come back typed"

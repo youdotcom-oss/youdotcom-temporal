@@ -155,6 +155,51 @@ def test_result_types_are_sdk_models_or_thin_envelopes():
             assert issubclass(result_type, BaseModel), op_name
 
 
+def test_contents_result_elements_are_the_contents_endpoint_model():
+    """`contents` elements must carry the fields the contents API returns.
+
+    The contents endpoint returns `ContentsResponse` elements (`url`, `title`,
+    `html`, `markdown`, `metadata`). The SDK's `Contents` model is the search
+    extraction shape (`html`, `markdown`, `highlights`) -- validating against
+    it silently dropped `url`, `title`, and `metadata` from every result.
+    """
+    from typing import get_type_hints
+
+    from youdotcom.models import ContentsResponse
+
+    assert get_type_hints(ContentsOutput)["results"].__args__[0] is ContentsResponse
+
+
+async def test_contents_workflow_preserves_the_full_response_shape(monkeypatch):
+    """Every field the contents endpoint returns must survive the Workflow.
+
+    A validation model that is a subset of the real response drops fields
+    silently -- the caller receives elements with no `url`, `title`, or
+    `metadata` and no error anywhere.
+    """
+    element = {
+        "url": "https://example.com",
+        "title": "Example",
+        "html": "<p>hi</p>",
+        "markdown": "# hi",
+        "metadata": {"site_name": "Example"},
+    }
+
+    async def _fake_execute_activity(_activity, _inp, **_kwargs):
+        return {"results": [dict(element)]}
+
+    monkeypatch.setattr(workflow, "execute_activity", _fake_execute_activity)
+    out = await YouContentsWorkflow().run(
+        ContentsInput(urls=["https://example.com"])
+    )
+    dumped = out.results[0].model_dump(mode="json")
+    assert dumped["url"] == "https://example.com"
+    assert dumped["title"] == "Example"
+    assert dumped["html"] == "<p>hi</p>"
+    assert dumped["markdown"] == "# hi"
+    assert dumped["metadata"]["site_name"] == "Example"
+
+
 def test_result_types_are_serializable_by_the_pydantic_converter():
     """The contract only works if Temporal can carry these types.
 
@@ -478,3 +523,25 @@ class TestWorkflowIdDerivation:
             ContentsInput(urls=["https://a.com", "https://b.com"]),
         ):
             assert self._id("p", "k", inp)
+
+
+async def test_research_operation_rejects_background_mode(monkeypatch):
+    """`research` must refuse `background=True` before any billable call.
+
+    `ResearchInput.background` exists for the Activity layer, but with
+    `background=True` the SDK returns a task handle (TaskResponse), which can
+    never validate as this Operation's `ResearchResponse` result. Without this
+    check the caller pays for the research task and then receives an opaque
+    `YouResponseShapeError`. `research_background` is the Operation for that
+    mode, and it waits for and returns the completed task.
+    """
+
+    async def _fake_execute_activity(_activity, _inp, **_kwargs):
+        raise AssertionError("the Activity must not run")
+
+    monkeypatch.setattr(workflow, "execute_activity", _fake_execute_activity)
+    with pytest.raises(ApplicationError) as caught:
+        await YouResearchWorkflow().run(ResearchInput(input="q", background=True))
+    assert caught.value.type == "YouValidationError"
+    assert caught.value.non_retryable
+    assert "research_background" in str(caught.value)

@@ -173,7 +173,7 @@ async def main():
     await worker.run()
 ```
 
-Create a Nexus Endpoint targeting that Worker, then call an Operation from a caller Workflow in another Namespace. Callers import from `youdotcom_temporal.contract`, which carries the types and none of the handler. No plugin and no sandbox escape are needed — the contract wraps its own SDK import — so these are safe at module scope:
+Create a Nexus Endpoint targeting that Worker, then call an Operation from a caller Workflow in another Namespace. Callers import from `youdotcom_temporal.contract`, which carries the types and none of the handler. No plugin and no sandbox escape are needed, because the contract wraps its own SDK import, so these are safe at module scope:
 
 ```python
 from datetime import timedelta
@@ -217,19 +217,19 @@ class CallerWorkflow:
 | `finance_research` | `FinanceResearchRequest` | `FinanceResearchResponse` | `YouFinanceResearchWorkflow` |
 | `research_background` | `ResearchRequest` | `TaskDetail` | `YouResearchBackgroundWorkflow` |
 
-Every request carries the matching Activity input plus an optional `idempotency_key`. Results are the You.com SDK's own response models, imported from `youdotcom_temporal.contract`, so callers get accurate nested types the SDK maintains. `contents` is the exception: the SDK returns a bare list, which could not gain fields later without breaking callers, so it keeps a thin `ContentsOutput` envelope whose elements are still SDK `Contents` models.
+Every request carries the matching Activity input plus an optional `idempotency_key`. Results are the You.com SDK's own response models, imported from `youdotcom_temporal.contract`, so callers get accurate nested types the SDK maintains. `contents` is the exception: the SDK returns a bare list, which could not gain fields later without breaking callers, so it keeps a thin `ContentsOutput` envelope whose elements are still SDK `ContentsResponse` models. `research` rejects `background=True` with a non-retryable `YouValidationError`, and `research_background` is the Operation for background mode.
 
-Each backing Workflow runs the Activity with a per-Activity `start_to_close_timeout`. A ceiling is a backstop rather than a latency target — it is where the Activity gives up and lets Temporal retry — so each carries generous headroom. `search` is 120s and `contents` 180s, sized off the 60s per-URL maximum a caller can request via `crawl_timeout` (`contents` gets more, since it accepts up to 10 URLs per request); `answer` is 60s; `research` is 10 minutes, `finance_research` 30 minutes, and `research_background` 4h15m.
+Each backing Workflow runs the Activity with a per-Activity `start_to_close_timeout`. A ceiling is a backstop rather than a latency target—it is where the Activity gives up and lets Temporal retry—so each carries generous headroom. `search` is 120s and `contents` 180s, sized off the 60s per-URL maximum a caller can request via `crawl_timeout` (`contents` gets more, since it accepts up to 10 URLs per request). `answer` is 60s, `research` is 10 minutes, `finance_research` is 30 minutes, and `research_background` is 4h15m.
 
-That ceiling is **per attempt** — `search`, `answer`, and `contents` retry up to 3 times, so size the caller's `schedule_to_close_timeout` against the ceiling times the attempt count. The research Operations do not retry: each attempt submits a new billable research task, and the previous one keeps running.
+That ceiling is **per attempt**—`search`, `answer`, and `contents` retry up to 3 times, so size the caller's `schedule_to_close_timeout` against the ceiling times the attempt count. The research Operations do not retry: each attempt submits a new billable research task, and the previous one keeps running.
 
 See the [Temporal Python Nexus quickstart](https://docs.temporal.io/develop/python/nexus/quickstart) for Endpoint and caller-Namespace setup, and `examples/run_nexus_worker.py` for a runnable handler-side Worker.
 
 **Known limits (draft):**
 
-- **Cancellation does not reach You.com, and cannot.** The You.com API exposes no cancellation — the research surface is `POST /v1/research` plus two GETs to poll or stream, with no DELETE — so a submitted request runs to completion and is billed regardless. Cancelling an Operation frees the backing Workflow and the Worker slot, nothing upstream.
+- **Cancellation does not reach You.com, and cannot.** The You.com API exposes no cancellation—the research surface is `POST /v1/research` plus two GETs to poll or stream, with no DELETE—so a submitted request runs to completion and is billed regardless. Cancelling an Operation frees the backing Workflow and the Worker slot, nothing upstream.
 - **Idempotency is opt-in and bounded.** Supplying `idempotency_key` deduplicates against a Workflow that is still *running*, which covers the StartOperation-retry case. A key reused after the first Operation completed starts a fresh run. Without a key, starts are not deduplicated at all.
-- **An unparseable response fails the Operation.** Results are parsed into SDK models on the handler side; a response that does not match raises a non-retryable `YouResponseShapeError` rather than hanging the caller.
+- **An unparseable response fails the Operation.** Results are parsed into SDK models on the handler side, and a response that does not match raises a non-retryable `YouResponseShapeError` rather than hanging the caller.
 
 ## Error handling
 

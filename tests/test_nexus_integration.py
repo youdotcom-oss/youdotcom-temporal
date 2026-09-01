@@ -91,7 +91,15 @@ def _mock_you_client(*_a: Any, **_kw: Any) -> Any:
         return_value=_Resp({"answer": "answer", "citations": [{"source": "s"}]})
     )
     you.contents_async = AsyncMock(
-        return_value=[_Resp({"markdown": "contents"})]
+        return_value=[
+            _Resp(
+                {
+                    "url": "https://example.com",
+                    "title": "contents",
+                    "markdown": "contents",
+                }
+            )
+        ]
     )
     you.research_async = AsyncMock(
         return_value=_Resp(
