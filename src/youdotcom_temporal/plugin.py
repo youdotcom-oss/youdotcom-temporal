@@ -14,6 +14,7 @@ _PASSTHROUGH_MODULES = [
     "httpcore",
     "pydantic",
     "pydantic_core",
+    "annotated_types",
     "certifi",
     "anyio",
     "sniffio",

@@ -17,6 +17,7 @@ class HelloSearch:
             youdotcom_search,
             SearchInput(query=query, count=5),
             start_to_close_timeout=timedelta(seconds=30),
+            summary=f"you.com search: {query}",
             retry_policy=RetryPolicy(
                 maximum_attempts=5,
                 maximum_interval=timedelta(seconds=60),

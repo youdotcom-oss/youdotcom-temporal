@@ -1,18 +1,41 @@
 [project]
 name = "youdotcom-temporal"
-version = "0.1.0"
-description = "Durable You.com search, research, and contents Activities for Temporal."
+version = "1.2.0"
+description = "Durable You.com search, answer, research, and contents Activities for Temporal."
+readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Tyler Eastman" }]
+keywords = ["temporal", "youcom", "you.com", "search", "workflow", "durable-execution"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     # Floor, not a pin: SimplePlugin needs 1.19.0+; use a recent stable floor and
     # let CI test the latest. Upper bound only guards the next major.
     "temporalio>=1.27.0,<2",
-    "youdotcom>=2.3.0,<3",
+    "youdotcom>=3.1.2,<4",
 ]
 
-[project.optional-dependencies]
+[project.urls]
+Homepage = "https://you.com"
+Documentation = "https://you.com/docs"
+Repository = "https://github.com/youdotcom-oss/youdotcom-temporal"
+Issues = "https://github.com/youdotcom-oss/youdotcom-temporal/issues"
+Changelog = "https://github.com/youdotcom-oss/youdotcom-temporal/releases"
+
+[dependency-groups]
+# Single source of truth for dev tooling — `uv sync --group dev` or
+# `pip install --group dev -e .` both resolve this.
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "mypy", "ruff"]
 
 [build-system]
@@ -21,10 +44,22 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/youdotcom_temporal"]
+include = ["src/youdotcom_temporal/py.typed"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "-m 'not integration'"
+# Catch leaked httpx transports: each activity opens/closes a You client, and a
+# leaked connection surfaces during GC as an unraisable exception. Making both
+# warnings errors ensures the test suite actually enforces cleanup.
+filterwarnings = [
+    "error::ResourceWarning",
+    "error::pytest.PytestUnraisableExceptionWarning",
+]
+markers = [
+    "integration: end-to-end tests hitting a real You.com API and a local Temporal server (require YDC_API_KEY); run with -m integration",
+]
 
 [tool.ruff]
 line-length = 100
@@ -36,3 +71,4 @@ select = ["E", "F", "I", "UP"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
+
