@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-09-02
+
 ### Added
 - Nexus Service support: `youdotcom_temporal.nexus.YouDotComService` exposes all six Activities as asynchronous, workflow-backed Nexus Operations callable across Namespace boundaries through a Nexus Endpoint
 - `youdotcom_temporal.contract` holds the Nexus contract: a request type per Operation carrying the Activity input plus an optional `idempotency_key`, and result types that are the You.com SDK's own response models, so callers get accurate nested types the SDK maintains. `contents` keeps a thin `ContentsOutput` envelope because the SDK returns a bare list; its elements are `ContentsResponse` models, not the search-extraction `Contents` model, which would have silently dropped `url`, `title`, and `metadata` from every element. Callers must configure `temporalio.contrib.pydantic.pydantic_data_converter`
