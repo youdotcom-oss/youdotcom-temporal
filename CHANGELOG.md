@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Nexus Service support: `youdotcom_temporal.nexus.YouDotComService` exposes all six Activities as asynchronous, workflow-backed Nexus Operations callable across Namespace boundaries through a Nexus Endpoint
+- `youdotcom_temporal.contract` holds the Nexus contract: a request type per Operation carrying the Activity input plus an optional `idempotency_key`, and result types that are the You.com SDK's own response models, so callers get accurate nested types the SDK maintains. `contents` keeps a thin `ContentsOutput` envelope because the SDK returns a bare list; its elements are `ContentsResponse` models, not the search-extraction `Contents` model, which would have silently dropped `url`, `title`, and `metadata` from every element. Callers must configure `temporalio.contrib.pydantic.pydantic_data_converter`
+- Supplying `idempotency_key` makes the backing Workflow Id deterministic and starts it with `WorkflowIDConflictPolicy.USE_EXISTING`, so a retried Nexus StartOperation request attaches to the run already in flight instead of starting a second Workflow and paying for a second You.com call. Deduplication holds against a *running* Workflow; without a key, starts are not deduplicated
+- `youdotcom_temporal.workflows` ships six thin backing Workflows (`YouSearchWorkflow`, `YouAnswerWorkflow`, `YouContentsWorkflow`, `YouResearchWorkflow`, `YouFinanceResearchWorkflow`, `YouResearchBackgroundWorkflow`), each wrapping its Activity with a per-Activity `start_to_close_timeout` carrying generous headroom, since a ceiling is a retry backstop rather than a latency target. `search` and `contents` are sized off the 60s per-URL maximum a caller can request via `crawl_timeout`
+- The `research` Operation rejects `background=True` with a non-retryable `YouValidationError`. With `background=True` the SDK returns a task handle, which can never validate as the Operation's `ResearchResponse` result—the caller would have paid for the research task and then received an opaque `YouResponseShapeError`. `research_background` is the Operation for background mode
+- `you_nexus_service_handler()` and `you_nexus_workflows()` helpers for Worker registration
+- `examples/run_nexus_worker.py` handler-side Worker example
+- Unit tests covering the Nexus Service contract and handler
+- Cross-Namespace round-trip tests against a local dev server (mocked You.com) and live round-trip tests for the fast Operations (`pytest -m integration`)
+
+### Notes
+- Nexus is an opt-in layer: importing `youdotcom_temporal.nexus` does not affect Activity-only users
+- Every Operation is async/workflow-backed because Nexus sync operations have a 10-second handler deadline that several You.com calls exceed
+- The handler Worker needs `YouPlugin` because it registers the Activities the backing Workflows call. Caller Workflows in other Namespaces need neither the plugin nor a sandbox escape
+- The research Operations do not retry: each attempt submits a new billable research task, and the previous one keeps running because the You.com API has no way to cancel a submitted request
+- Known limits, tracked before release: cancelling an Operation does not stop the in-flight You.com call
+- Responses are parsed into SDK models on the handler side. A response that does not match raises a non-retryable `YouResponseShapeError`, because an unguarded parse error inside a Workflow is a Workflow task failure that Temporal would retry indefinitely, hanging the caller
+
 ## [1.1.0] — 2026-08-21
 
 ### Added

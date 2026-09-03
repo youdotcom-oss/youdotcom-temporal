@@ -2,7 +2,7 @@
 
 Durable [You.com](https://you.com) search, answer, research, and contents Activities for [Temporal](https://temporal.io).
 
-Exposes You.com API calls as Temporal Activities with proper error mapping, retry semantics, and workflow sandbox support. Ships as a `SimplePlugin` for one-line setup, or as standalone activity functions for manual worker wiring.
+Exposes You.com API calls as Temporal Activities with proper error mapping, retry semantics, and workflow sandbox support. Ships as a `SimplePlugin` for one-line setup, or as standalone activity functions for manual worker wiring. An optional Nexus Service (`youdotcom_temporal.nexus`) exposes the same calls as cross-Namespace Operations for teams that want a durable service contract on top of the Activities.
 
 ## Installation
 
@@ -137,6 +137,100 @@ All activities return JSON-serializable dicts (via `model_dump(mode="json")`).
 | `crawl_timeout` | `int` | `10` | Per-URL timeout in seconds (1-60) |
 | `max_age` | `int \| None` | `None` | Max cache age in seconds (0 = always re-fetch) |
 
+## Nexus Service
+
+`youdotcom_temporal.nexus.YouDotComService` is a [Temporal Nexus](https://docs.temporal.io/nexus) Service that exposes all six Activities as Operations callable across Namespace boundaries through a Nexus Endpoint. It is an opt-in layer on top of the Activities, so importing it does not affect Activity-only users.
+
+Every Operation is asynchronous and backed by a Workflow (`youdotcom_temporal.workflows`). Nexus synchronous operations must finish within a 10-second handler deadline, which is the wrong shape for these calls: `research` and `finance_research` are multi-step research runs measured in tens of seconds to minutes by design, background research runs up to 4 hours for `frontier`, and `search` and `contents` accept `livecrawl` and `crawl_timeout` (up to 60s per URL), so a caller can legitimately ask for a long call.
+
+A sync handler that misses the deadline fails as a retryable error, and five consecutive retryable errors trip a circuit breaker that blocks *every* Operation on that caller/Endpoint pair for 60 seconds. Routing each Operation through a Workflow removes the cliff and gives the caller durable, observable execution.
+
+Register the handler, the backing Workflows, and the Activities (via `YouPlugin`) on one Worker in the handler Namespace. `YouPlugin` is what registers the Activities the backing Workflows call, so the handler Worker needs it.
+
+Operations return the You.com SDK's own pydantic response models, so both the handler and every caller need Temporal's pydantic data converter.
+
+```python
+from temporalio.client import Client
+from temporalio.contrib.pydantic import pydantic_data_converter
+from temporalio.worker import Worker
+from youdotcom_temporal import YouPlugin
+from youdotcom_temporal.nexus import you_nexus_service_handler
+from youdotcom_temporal.workflows import you_nexus_workflows
+
+async def main():
+    client = await Client.connect(
+        "localhost:7233",
+        namespace="you-handler",
+        data_converter=pydantic_data_converter,
+    )
+    worker = Worker(
+        client,
+        task_queue="you-nexus",
+        workflows=you_nexus_workflows(),
+        nexus_service_handlers=[you_nexus_service_handler()],
+        plugins=[YouPlugin()],
+    )
+    await worker.run()
+```
+
+Create a Nexus Endpoint targeting that Worker, then call an Operation from a caller Workflow in another Namespace. Callers import from `youdotcom_temporal.contract`, which carries the types and none of the handler. No plugin and no sandbox escape are needed, because the contract wraps its own SDK import, so these are safe at module scope:
+
+```python
+from datetime import timedelta
+from temporalio import workflow
+
+from youdotcom_temporal.contract import SearchRequest, SearchResponse, YouDotComService
+from youdotcom_temporal.models import SearchInput
+
+NEXUS_ENDPOINT = "you-nexus-endpoint"
+
+@workflow.defn
+class CallerWorkflow:
+    @workflow.run
+    async def run(self, query: str) -> SearchResponse:
+        nexus_client = workflow.create_nexus_client(
+            service=YouDotComService, endpoint=NEXUS_ENDPOINT
+        )
+        out = await nexus_client.execute_operation(
+            YouDotComService.search,
+            SearchRequest(
+                input=SearchInput(query=query, count=10),
+                # Optional. With a key, a retried StartOperation attaches to the
+                # Workflow already running instead of starting a second one and
+                # paying for a second You.com call.
+                idempotency_key=f"search:{query}",
+            ),
+            # Must exceed the handler-side worst case: the Activity ceiling
+            # times the retry policy's maximum_attempts (120s x 3 for search).
+            schedule_to_close_timeout=timedelta(minutes=10),
+        )
+        out.results.web[0].title   # typed all the way down
+        return out
+```
+
+| Operation | Request | Result | Backing Workflow |
+|---|---|---|---|
+| `search` | `SearchRequest` | `SearchResponse` | `YouSearchWorkflow` |
+| `answer` | `AnswerRequest` | `AnswerResponse` | `YouAnswerWorkflow` |
+| `contents` | `ContentsRequest` | `ContentsOutput` | `YouContentsWorkflow` |
+| `research` | `ResearchRequest` | `ResearchResponse` | `YouResearchWorkflow` |
+| `finance_research` | `FinanceResearchRequest` | `FinanceResearchResponse` | `YouFinanceResearchWorkflow` |
+| `research_background` | `ResearchRequest` | `TaskDetail` | `YouResearchBackgroundWorkflow` |
+
+Every request carries the matching Activity input plus an optional `idempotency_key`. Results are the You.com SDK's own response models, imported from `youdotcom_temporal.contract`, so callers get accurate nested types the SDK maintains. `contents` is the exception: the SDK returns a bare list, which could not gain fields later without breaking callers, so it keeps a thin `ContentsOutput` envelope whose elements are still SDK `ContentsResponse` models. `research` rejects `background=True` with a non-retryable `YouValidationError`, and `research_background` is the Operation for background mode.
+
+Each backing Workflow runs the Activity with a per-Activity `start_to_close_timeout`. A ceiling is a backstop rather than a latency target—it is where the Activity gives up and lets Temporal retry—so each carries generous headroom. `search` is 120s and `contents` 180s, sized off the 60s per-URL maximum a caller can request via `crawl_timeout` (`contents` gets more, since it accepts up to 10 URLs per request). `answer` is 60s, `research` is 10 minutes, `finance_research` is 30 minutes, and `research_background` is 4h15m.
+
+That ceiling is **per attempt**—`search`, `answer`, and `contents` retry up to 3 times, so size the caller's `schedule_to_close_timeout` against the ceiling times the attempt count. The research Operations do not retry: each attempt submits a new billable research task, and the previous one keeps running.
+
+See the [Temporal Python Nexus quickstart](https://docs.temporal.io/develop/python/nexus/quickstart) for Endpoint and caller-Namespace setup, and `examples/run_nexus_worker.py` for a runnable handler-side Worker.
+
+**Known limits (draft):**
+
+- **Cancellation does not reach You.com, and cannot.** The You.com API exposes no cancellation—the research surface is `POST /v1/research` plus two GETs to poll or stream, with no DELETE—so a submitted request runs to completion and is billed regardless. Cancelling an Operation frees the backing Workflow and the Worker slot, nothing upstream.
+- **Idempotency is opt-in and bounded.** Supplying `idempotency_key` deduplicates against a Workflow that is still *running*, which covers the StartOperation-retry case. A key reused after the first Operation completed starts a fresh run. Without a key, starts are not deduplicated at all.
+- **An unparseable response fails the Operation.** Results are parsed into SDK models on the handler side, and a response that does not match raises a non-retryable `YouResponseShapeError` rather than hanging the caller.
+
 ## Error handling
 
 | HTTP status | Error type | Retryable? |
@@ -171,6 +265,7 @@ See the [`examples/`](examples/) directory:
 - `run_worker.py` - starts a worker with `YouPlugin`
 - `run_workflow.py` - executes the search workflow
 - `run_background_research_workflow.py` - executes the background research workflow
+- `run_nexus_worker.py` - handler-side Worker hosting the `YouDotCom` Nexus Service
 
 ```bash
 # Terminal 1
