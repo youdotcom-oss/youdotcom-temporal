@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -757,16 +757,16 @@ wheels = [
 
 [[package]]
 name = "youdotcom"
-version = "3.1.2"
+version = "3.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpcore" },
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/99/77c5b7246ca4ffbb0ae0fc98757836b2a6cd114e2454e2bc73cd52c2bef0/youdotcom-3.1.2.tar.gz", hash = "sha256:73b4801203b6fca15f0531c5c34ae1dc680d2d41edf83748f572023c6137916d", size = 141929, upload-time = "2026-08-21T06:46:55.788Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c0/96/d72847c4d6720e1bfa219521fd2048d5489929b93563481ec4d9c8bf55da/youdotcom-3.6.0.tar.gz", hash = "sha256:456351c8bfc4097fd33c067e017383ec44e7b401946dc2c6273109ef03b2e61c", size = 162263, upload-time = "2026-10-15T00:30:05.612Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e8/bb/258571903378fc865b87b3749c460dad7a8534bbccf8c4a3873203359536/youdotcom-3.1.2-py3-none-any.whl", hash = "sha256:1ef5c66871e0fe3320d5fa0869ba59420511560648e9fb793f9c7f1e0e7d641c", size = 114867, upload-time = "2026-08-21T06:46:54.5Z" },
+    { url = "https://files.pythonhosted.org/packages/65/f2/b218478b4a36475933474fd1d899990e08b74652b099419dff4247a46d4d/youdotcom-3.6.0-py3-none-any.whl", hash = "sha256:2fb95d4deeef1ba8c6df8a33bbb452c665502e1f2eb43b3bf23c2bbadc1501b0", size = 121405, upload-time = "2026-10-15T00:30:04.287Z" },
 ]
 
 [[package]]
